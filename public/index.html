@@ -14,6 +14,11 @@
         </div>
     </div>
 
+    <div id="controls-area" style="margin: 20px 0; padding: 10px; border: 2px dashed #888;">
+        <h4>기술 선택 (Move Selection)</h4>
+        <div id="move-buttons"></div>
+    </div>
+
     <button id="btn-attack" style="padding: 10px 20px; font-size: 16px; cursor: pointer;">
         ⚡ 공격하기 (Attack)
     </button>
@@ -46,6 +51,38 @@
             p2Name.innerText = data.p2.name;
             p2Hp.innerText = `HP: ${data.p2.hp} / ${data.p2.maxHp}`;
         });
+
+        const moveButtonsContainer = document.getElementById('move-buttons');
+
+        // UI 업데이트 (서버에서 기술 목록을 받아옴)
+        socket.on('update_ui', (data) => {
+            // 1. 상태 텍스트 갱신 (기존 코드)
+            p1Name.innerText = data.p1.name;
+            p1Hp.innerText = `HP: ${data.p1.hp} / ${data.p1.maxHp}`;
+            p2Name.innerText = data.p2.name;
+            p2Hp.innerText = `HP: ${data.p2.hp} / ${data.p2.maxHp}`;
+
+            // 2. 기술 버튼 다시 그리기 (Re-rendering)
+            // React 같은 프레임워크가 하는 일을 수동으로 하는 겁니다.
+            moveButtonsContainer.innerHTML = ''; // 기존 버튼 싹 지우기
+
+            // P1의 기술 목록으로 버튼 생성
+            data.p1.moves.forEach((move, index) => {
+                const btn = document.createElement('button');
+                // 버튼 텍스트: "10만볼트 (Power: 90)"
+                btn.innerText = `${move.name} (위력: ${move.power})`;
+                btn.style.marginRight = '10px';
+                btn.style.padding = '10px';
+                btn.style.cursor = 'pointer';
+
+                // 클릭 시 서버로 인덱스 전송
+                btn.onclick = () => {
+                    socket.emit('attack', index);
+                };
+
+                moveButtonsContainer.appendChild(btn);
+        });
+    });
 
         // 로그 출력
         socket.on('chat message', (msg) => {
