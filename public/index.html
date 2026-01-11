@@ -1,13 +1,36 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>포켓몬 쇼다운 클론</title>
+    <style>
+        body { font-family: sans-serif; }
+        #messages { list-style-type: none; margin: 0; padding: 0; }
+        #messages li { padding: 5px 10px; }
+        #messages li:nth-child(odd) { background: #eee; }
+        
+        /* 버튼 스타일 좀 더 예쁘게 */
+        button {
+            background-color: #f0f0f0;
+            border: 1px solid #999;
+            border-radius: 4px;
+            transition: background-color 0.2s;
+        }
+        button:hover {
+            background-color: #ddd;
+        }
+    </style>
+</head>
 <body>
     <h1>포켓몬 쇼다운 프로토타입</h1>
     
     <div style="display: flex; gap: 50px; margin-bottom: 20px;">
-        <div id="p1-status" style="border: 1px solid #ccc; padding: 10px;">
+        <div id="p1-status" style="border: 1px solid #ccc; padding: 10px; min-width: 150px;">
             <h3>Player 1</h3>
             <div id="p1-name">?</div>
             <div id="p1-hp">HP: ? / ?</div>
         </div>
-        <div id="p2-status" style="border: 1px solid #ccc; padding: 10px;">
+        <div id="p2-status" style="border: 1px solid #ccc; padding: 10px; min-width: 150px;">
             <h3>Player 2</h3>
             <div id="p2-name">?</div>
             <div id="p2-hp">HP: ? / ?</div>
@@ -16,14 +39,11 @@
 
     <div id="controls-area" style="margin: 20px 0; padding: 10px; border: 2px dashed #888;">
         <h4>기술 선택 (Move Selection)</h4>
-        <div id="move-buttons"></div>
+        <div id="move-buttons" style="display: flex; gap: 10px;"></div>
     </div>
 
-    <button id="btn-attack" style="padding: 10px 20px; font-size: 16px; cursor: pointer;">
-        ⚡ 공격하기 (Attack)
-    </button>
-
     <hr>
+    <h3>전투 로그</h3>
     <ul id="messages"></ul>
 
     <script src="/socket.io/socket.io.js"></script>
@@ -34,61 +54,48 @@
         const p1Hp = document.getElementById('p1-hp');
         const p2Name = document.getElementById('p2-name');
         const p2Hp = document.getElementById('p2-hp');
+        const moveButtonsContainer = document.getElementById('move-buttons');
         const messages = document.getElementById('messages');
 
-        // 공격 버튼 누르면 서버로 명령 전송
-        document.getElementById('btn-attack').addEventListener('click', () => {
-            socket.emit('attack');
-        });
-
         // 서버가 보내준 UI 데이터로 화면 갱신 (Rendering)
+        // 중복되었던 코드를 하나로 통합했습니다.
         socket.on('update_ui', (data) => {
-            // Player 1 갱신
+            // 1. 상태 텍스트 갱신
             p1Name.innerText = data.p1.name;
             p1Hp.innerText = `HP: ${data.p1.hp} / ${data.p1.maxHp}`;
             
-            // Player 2 갱신
-            p2Name.innerText = data.p2.name;
-            p2Hp.innerText = `HP: ${data.p2.hp} / ${data.p2.maxHp}`;
-        });
-
-        const moveButtonsContainer = document.getElementById('move-buttons');
-
-        // UI 업데이트 (서버에서 기술 목록을 받아옴)
-        socket.on('update_ui', (data) => {
-            // 1. 상태 텍스트 갱신 (기존 코드)
-            p1Name.innerText = data.p1.name;
-            p1Hp.innerText = `HP: ${data.p1.hp} / ${data.p1.maxHp}`;
             p2Name.innerText = data.p2.name;
             p2Hp.innerText = `HP: ${data.p2.hp} / ${data.p2.maxHp}`;
 
-            // 2. 기술 버튼 다시 그리기 (Re-rendering)
-            // React 같은 프레임워크가 하는 일을 수동으로 하는 겁니다.
-            moveButtonsContainer.innerHTML = ''; // 기존 버튼 싹 지우기
+            // 2. 기술 버튼 동적 생성 (Re-rendering)
+            moveButtonsContainer.innerHTML = ''; // 기존 버튼 초기화 (Clear)
 
-            // P1의 기술 목록으로 버튼 생성
-            data.p1.moves.forEach((move, index) => {
-                const btn = document.createElement('button');
-                // 버튼 텍스트: "10만볼트 (Power: 90)"
-                btn.innerText = `${move.name} (위력: ${move.power})`;
-                btn.style.marginRight = '10px';
-                btn.style.padding = '10px';
-                btn.style.cursor = 'pointer';
+            // P1의 기술 목록만큼 반복해서 버튼 생성
+            if(data.p1.moves) {
+                data.p1.moves.forEach((move, index) => {
+                    const btn = document.createElement('button');
+                    btn.innerText = `${move.name}\n(위력: ${move.power})`; // 줄바꿈 추가
+                    btn.style.padding = '10px';
+                    btn.style.cursor = 'pointer';
 
-                // 클릭 시 서버로 인덱스 전송
-                btn.onclick = () => {
-                    socket.emit('attack', index);
-                };
+                    // 클릭 시 해당 기술의 인덱스(0, 1, 2...)를 서버로 전송
+                    btn.onclick = () => {
+                        socket.emit('attack', index);
+                    };
 
-                moveButtonsContainer.appendChild(btn);
+                    moveButtonsContainer.appendChild(btn);
+                });
+            }
         });
-    });
 
         // 로그 출력
         socket.on('chat message', (msg) => {
             const item = document.createElement('li');
             item.textContent = msg;
             messages.appendChild(item);
+            // 로그가 많아지면 스크롤 자동 내리기
+            window.scrollTo(0, document.body.scrollHeight);
         });
     </script>
 </body>
+</html>
