@@ -1,0 +1,57 @@
+<body>
+    <h1>포켓몬 쇼다운 프로토타입</h1>
+    
+    <div style="display: flex; gap: 50px; margin-bottom: 20px;">
+        <div id="p1-status" style="border: 1px solid #ccc; padding: 10px;">
+            <h3>Player 1</h3>
+            <div id="p1-name">?</div>
+            <div id="p1-hp">HP: ? / ?</div>
+        </div>
+        <div id="p2-status" style="border: 1px solid #ccc; padding: 10px;">
+            <h3>Player 2</h3>
+            <div id="p2-name">?</div>
+            <div id="p2-hp">HP: ? / ?</div>
+        </div>
+    </div>
+
+    <button id="btn-attack" style="padding: 10px 20px; font-size: 16px; cursor: pointer;">
+        ⚡ 공격하기 (Attack)
+    </button>
+
+    <hr>
+    <ul id="messages"></ul>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+        
+        const p1Name = document.getElementById('p1-name');
+        const p1Hp = document.getElementById('p1-hp');
+        const p2Name = document.getElementById('p2-name');
+        const p2Hp = document.getElementById('p2-hp');
+        const messages = document.getElementById('messages');
+
+        // 공격 버튼 누르면 서버로 명령 전송
+        document.getElementById('btn-attack').addEventListener('click', () => {
+            socket.emit('attack');
+        });
+
+        // 서버가 보내준 UI 데이터로 화면 갱신 (Rendering)
+        socket.on('update_ui', (data) => {
+            // Player 1 갱신
+            p1Name.innerText = data.p1.name;
+            p1Hp.innerText = `HP: ${data.p1.hp} / ${data.p1.maxHp}`;
+            
+            // Player 2 갱신
+            p2Name.innerText = data.p2.name;
+            p2Hp.innerText = `HP: ${data.p2.hp} / ${data.p2.maxHp}`;
+        });
+
+        // 로그 출력
+        socket.on('chat message', (msg) => {
+            const item = document.createElement('li');
+            item.textContent = msg;
+            messages.appendChild(item);
+        });
+    </script>
+</body>

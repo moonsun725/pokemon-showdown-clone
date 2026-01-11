@@ -1,0 +1,12 @@
+{
+  "pokedex": [
+    { "name": "피카츄", "hp": 100, "atk": 55, "type": "Electric" },
+    { "name": "파이리", "hp": 110, "atk": 52, "type": "Fire" }
+  ],
+  "moves": [
+    { "name": "10만볼트", "power": 90, "type": "Electric" },
+    { "name": "화염방사", "power": 90, "type": "Fire" },
+    { "name": "맹독", "power": 0, "type": "Poison" },
+    { "name": "칼춤", "power": 0, "type": "Normal" }
+  ]
+}
