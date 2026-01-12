@@ -1,3 +1,4 @@
+// 데이터 받아올 파일 
 import data from './data.json' with { type: 'json' };
 
 // 1. 기술 인터페이스 정의 (C++의 struct 역할)
