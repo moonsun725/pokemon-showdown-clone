@@ -10,12 +10,14 @@ export interface Move {
 export class Pokemon {
     public name: string;
     public hp: number;
+    public maxHp: number;
     public atk: number;
     // 2. 기술 배열 추가 (C++의 std::vector<Move> 느낌)
     public moves: Move[] = [];
 
     constructor(name: string, hp: number, atk: number) {
         this.name = name;
+        this.maxHp = hp;
         this.hp = hp;
         this.atk = atk;
         for(var i = 0; i<4; i++)
