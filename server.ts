@@ -21,6 +21,12 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 let player1Id: string | null = null;
 let player2Id: string | null = null;
+let p1 = createPokemon("피카츄");
+let p2 = createPokemon("파이리");
+
+// 각 플레이어의 선택을 임시로 저장
+let p1MoveIndex: number | null = null;
+let p2MoveIndex: number | null = null;
 
 // --- 2. 서버 메모리에 게임 상태 저장 (Global State) ---
 // 실제 게임에선 방(Room)마다 따로 만들어야 하지만, 지금은 연습용으로 전역 변수에 둡니다.
@@ -47,40 +53,40 @@ io.on('connection', (socket) => {
 
     // UI 정보 전송 (기존 코드)
     socket.emit('update_ui', { 
-        p1: { name: p1.name, hp: p1.hp, moves: p1.moves },
-        p2: { name: p2.name, hp: p2.hp, moves: p2.moves }
+        p1: { name: p1.name, hp: p1.hp, maxHp: p1.maxHp, moves: p1.moves },
+        p2: { name: p2.name, hp: p2.hp, maxHp: p2.maxHp, moves: p2.moves }
     });
 
-    // 공격 처리
+    // 공격 처리 (로직 변경됨)
     socket.on('attack', (moveIndex) => {
-        // ★ 4. 권한 검증 (Server Authority)
-        // 요청 보낸 사람이 해당 포켓몬의 주인이 맞는지 확인
-        if (myRole === 'player1' && socket.id === player1Id) {
-            // P1의 턴 처리 (피카츄가 공격)
-            if (p1.moves[moveIndex]) {
-                console.log(`P1(${p1.name}) 공격 시도`);
-                p1.useMove(moveIndex, p2);
-                io.emit('chat message', `${p1.name}의 ${p1.moves[moveIndex].name}!`);
-            }
-        } 
-        else if (myRole === 'player2' && socket.id === player2Id) {
-            // P2의 턴 처리 (파이리가 공격)
-            if (p2.moves[moveIndex]) {
-                console.log(`P2(${p2.name}) 공격 시도`);
-                p2.useMove(moveIndex, p1);
-                io.emit('chat message', `${p2.name}의 ${p2.moves[moveIndex].name}!`);
-            }
-        } 
-        else {
-            console.log(`[경고] 권한 없는 유저(${socket.id})의 공격 시도 차단됨.`);
-            return; // 해킹 시도 or 관전자의 클릭 무시
+        // 유효성 검사
+        if (typeof moveIndex !== 'number') return;
+
+        // ★ 2. 기술을 바로 쓰지 않고 "예약"만 함
+        let role = '';
+        if (socket.id === player1Id) {
+            role = 'P1';
+            p1MoveIndex = moveIndex; // P1의 선택 저장
+        } else if (socket.id === player2Id) {
+            role = 'P2';
+            p2MoveIndex = moveIndex; // P2의 선택 저장
+        } else {
+            return; // 관전자 무시
         }
 
-        // 결과 방송
-        io.emit('update_ui', { 
-            p1: { name: p1.name, hp: p1.hp, moves: p1.moves },
-            p2: { name: p2.name, hp: p2.hp, moves: p2.moves }
-        });
+        console.log(`[Turn] ${role} 선택 완료 (기술 번호: ${moveIndex})`);
+        
+        // "선택 완료되었습니다" 메시지 전송 (UI 잠금용)
+        socket.emit('move_locked');
+
+        // ★ 3. 두 명 다 선택했는지 확인 (Check Conditions)
+        if (p1MoveIndex !== null && p2MoveIndex !== null) {
+            console.log("== 두 명 다 선택함! 턴 계산 시작 ==");
+            resolveTurn();
+        } else {
+            // 한 명만 선택한 경우: "상대방 기다리는 중..." 메시지 방송
+            io.emit('chat message', `[시스템] ${role} 준비 완료! 상대방을 기다리는 중...`);
+        }
     });
 
     // 접속 종료 처리 (자리가 비면 null로 초기화)
@@ -94,6 +100,67 @@ io.on('connection', (socket) => {
         }
     });
 });
+
+// ★ 4. 턴 계산 및 실행 함수 (Game Loop Logic)
+function resolveTurn() {
+    // 기술 객체 가져오기 (p1MoveIndex가 null이 아님을 보장해야 함)
+    const move1 = p1.moves[p1MoveIndex!];
+    const move2 = p2.moves[p2MoveIndex!];
+
+    if (!move1 || !move2) return; // 에러 방지
+
+    // 스피드 계산 로직 (지금은 간단하게 무조건 P1 선공, 나중에 speed 비교 추가)
+    // 순서: P1 공격 -> P2 생존 확인 -> P2 공격
+    
+    // --- Phase 1: P1 공격 ---
+    io.emit('chat message', `⚡ ${p1.name}의 ${move1.name}!`);
+    p1.useMove(p1MoveIndex!, p2); // pokemon.ts의 useMove 호출
+
+    if (p2.hp <= 0) {
+        io.emit('chat message', `🏆 ${p2.name} 쓰러짐! ${p1.name} 승리!`);
+        resetGame(); // 게임 초기화 함수 (아래 구현)
+        return;
+    }
+
+    // --- Phase 2: P2 공격 ---
+    io.emit('chat message', `🔥 ${p2.name}의 ${move2.name}!`);
+    p2.useMove(p2MoveIndex!, p1);
+
+    if (p1.hp <= 0) {
+        io.emit('chat message', `🏆 ${p1.name} 쓰러짐! ${p2.name} 승리!`);
+        resetGame();
+        return;
+    }
+
+    // --- Phase 3: 턴 종료 및 상태 업데이트 ---
+    // 선택 초기화
+    p1MoveIndex = null;
+    p2MoveIndex = null;
+
+    // 모든 클라이언트에게 최신 상태 전송 & 입력 잠금 해제
+    io.emit('update_ui', { 
+        p1: { name: p1.name, hp: p1.hp, maxHp: p1.maxHp, moves: p1.moves },
+        p2: { name: p2.name, hp: p2.hp, maxHp: p2.maxHp, moves: p2.moves }
+    });
+    
+    // 클라이언트들에게 "다음 턴 시작해" 신호 (버튼 활성화)
+    io.emit('turn_start');
+}
+
+function resetGame() {
+    // 간단하게 체력만 원상복구
+    p1.hp = p1.maxHp;
+    p2.hp = p2.maxHp;
+    p1MoveIndex = null;
+    p2MoveIndex = null;
+    
+    io.emit('chat message', `🔄 게임이 재시작되었습니다.`);
+    io.emit('update_ui', { 
+        p1: { name: p1.name, hp: p1.hp, maxHp: p1.maxHp, moves: p1.moves },
+        p2: { name: p2.name, hp: p2.hp, maxHp: p2.maxHp, moves: p2.moves }
+    });
+    io.emit('turn_start');
+}
 
 const PORT = 3000;
 httpServer.listen(PORT, () => {
