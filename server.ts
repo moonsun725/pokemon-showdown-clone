@@ -1,4 +1,4 @@
-// server.ts
+// npx ts-node --esm server.ts : 터미널에서 이거로 실행 ㄱㄱ
 import express from 'express';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
