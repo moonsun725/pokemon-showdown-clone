@@ -35,9 +35,6 @@ let p2 = createPokemon("파이리");
 io.on('connection', (socket) => {
     console.log(`새로운 접속자: ${socket.id}`);
 
-<<<<<<< Updated upstream
-    // 3. 접속하자마자 현재 상태(체력 등)를 보내줌 (Sync)
-=======
     // ★ 2. 빈자리 찾아서 역할 배정 (Role Assignment)
     let myRole = 'spectator'; // 기본은 관전자
 
@@ -57,23 +54,11 @@ io.on('connection', (socket) => {
     socket.emit('role_assigned', { role: myRole });
 
     // UI 정보 전송 (기존 코드)
->>>>>>> Stashed changes
     socket.emit('update_ui', { 
         p1: { name: p1.name, hp: p1.hp},
         p2: { name: p2.name, hp: p2.hp}
     });
 
-<<<<<<< Updated upstream
-    // 4. 클라이언트가 'attack' 명령을 보내면 처리
-    socket.on('attack', () => {
-        console.log("공격 명령 수신!");
-
-        // 간단한 턴 로직: 피카츄가 파이리를 때림 (하드코딩)
-        // 실제론 누가 눌렀는지(socket.id) 확인해서 처리해야 함
-        p1.useMove(0, p2); // pokemon.ts에 기술이 없으면 에러납니다! (기술 추가 필요)
-
-        // 5. 변경된 체력 정보를 모든 클라이언트에게 방송(Broadcast)
-=======
     // 공격 처리
     socket.on('attack', (moveIndex) => {
         // ★ 4. 권한 검증 (Server Authority)
@@ -100,7 +85,6 @@ io.on('connection', (socket) => {
         }
 
         // 결과 방송
->>>>>>> Stashed changes
         io.emit('update_ui', { 
             p1: { name: p1.name, hp: p1.hp},
             p2: { name: p2.name, hp: p2.hp}
