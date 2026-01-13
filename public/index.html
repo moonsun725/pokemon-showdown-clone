@@ -56,37 +56,60 @@
         const p2Hp = document.getElementById('p2-hp');
         const moveButtonsContainer = document.getElementById('move-buttons');
         const messages = document.getElementById('messages');
+        
+        // ★ 내 역할을 저장할 변수
+        let myRole = '';
 
-        // 서버가 보내준 UI 데이터로 화면 갱신 (Rendering)
-        // 중복되었던 코드를 하나로 통합했습니다.
-        socket.on('update_ui', (data) => {
-            // 1. 상태 텍스트 갱신
-            p1Name.innerText = data.p1.name;
-            p1Hp.innerText = `HP: ${data.p1.hp} / ${data.p1.maxHp}`;
-            
-            p2Name.innerText = data.p2.name;
-            p2Hp.innerText = `HP: ${data.p2.hp} / ${data.p2.maxHp}`;
+// 1. 서버로부터 역할 할당 받기
+    socket.on('role_assigned', (data) => {
+        myRole = data.role;
+        const roleText = myRole === 'player1' ? "Player 1 (피카츄)" : 
+                         myRole === 'player2' ? "Player 2 (파이리)" : "관전자 Mode";
+        
+        // 화면 제목에 표시 (선택사항)
+        document.querySelector('h1').innerText = `포켓몬 쇼다운 - 당신은 [${roleText}]`;
+        
+        // 역할이 정해졌으니 UI를 한번 갱신해달라고 요청하거나, 
+        // 다음 update_ui 때 반영되기를 기다립니다.
+    });
 
-            // 2. 기술 버튼 동적 생성 (Re-rendering)
-            moveButtonsContainer.innerHTML = ''; // 기존 버튼 초기화 (Clear)
+    // 2. UI 업데이트 로직 수정
+    socket.on('update_ui', (data) => {
+        // 텍스트 갱신 (기존 코드 그대로)
+        p1Name.innerText = data.p1.name;
+        p1Hp.innerText = `HP: ${data.p1.hp} / ${data.p1.maxHp}`;
+        p2Name.innerText = data.p2.name;
+        p2Hp.innerText = `HP: ${data.p2.hp} / ${data.p2.maxHp}`;
 
-            // P1의 기술 목록만큼 반복해서 버튼 생성
-            if(data.p1.moves) {
-                data.p1.moves.forEach((move, index) => {
-                    const btn = document.createElement('button');
-                    btn.innerText = `${move.name}\n(위력: ${move.power})`; // 줄바꿈 추가
-                    btn.style.padding = '10px';
-                    btn.style.cursor = 'pointer';
+        // ★ 버튼 그리기: 내 역할에 맞는 기술만 보여주기
+        moveButtonsContainer.innerHTML = ''; 
 
-                    // 클릭 시 해당 기술의 인덱스(0, 1, 2...)를 서버로 전송
-                    btn.onclick = () => {
-                        socket.emit('attack', index);
-                    };
+        let myMoves = [];
+        if (myRole === 'player1') {
+            myMoves = data.p1.moves;
+        } else if (myRole === 'player2') {
+            myMoves = data.p2.moves;
+        } else {
+            moveButtonsContainer.innerText = "관전 중입니다. (조작 불가)";
+            return;
+        }
 
-                    moveButtonsContainer.appendChild(btn);
-                });
-            }
-        });
+        // 버튼 생성 루프
+        if (myMoves) {
+            myMoves.forEach((move, index) => {
+                const btn = document.createElement('button');
+                btn.innerText = `${move.name}\n(${move.power})`;
+                btn.style.padding = '10px';
+                btn.style.marginRight = '5px';
+                btn.style.cursor = 'pointer';
+
+                btn.onclick = () => {
+                    socket.emit('attack', index);
+                };
+                moveButtonsContainer.appendChild(btn);
+            });
+        }
+    });
 
         // 로그 출력
         socket.on('chat message', (msg) => {

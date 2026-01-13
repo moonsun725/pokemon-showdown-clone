@@ -55,8 +55,8 @@ io.on('connection', (socket) => {
 
     // UI 정보 전송 (기존 코드)
     socket.emit('update_ui', { 
-        p1: { name: p1.name, hp: p1.hp},
-        p2: { name: p2.name, hp: p2.hp}
+        p1: { name: p1.name, hp: p1.hp, moves: p1.moves },
+        p2: { name: p2.name, hp: p2.hp, moves: p2.moves }
     });
 
     // 공격 처리
@@ -86,8 +86,8 @@ io.on('connection', (socket) => {
 
         // 결과 방송
         io.emit('update_ui', { 
-            p1: { name: p1.name, hp: p1.hp},
-            p2: { name: p2.name, hp: p2.hp}
+            p1: { name: p1.name, hp: p1.hp, moves: p1.moves },
+            p2: { name: p2.name, hp: p2.hp, moves: p2.moves }
         });
     });
 
