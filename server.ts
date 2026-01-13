@@ -24,14 +24,6 @@ let player2Id: string | null = null;
 
 // --- 2. 서버 메모리에 게임 상태 저장 (Global State) ---
 // 실제 게임에선 방(Room)마다 따로 만들어야 하지만, 지금은 연습용으로 전역 변수에 둡니다.
-let p1 = createPokemon("피카츄");
-let p2 = createPokemon("파이리");
-
-// 임시: 기술 하나씩 강제로 배우게 하기 (데이터 인덱스 0, 1)
-// data.json을 직접 import하거나 pokemon.ts에 기술 배우는 함수를 활용
-// 여기선 간단하게직접 주입하지 않고 로직상 있다고 가정하거나, createPokemon 내부에서 처리하면 좋습니다.
-// (일단 로직이 복잡해지니, pokemon.ts의 createPokemon 안에 '기본 기술'을 주는 코드를 넣는 걸 추천합니다)
-
 io.on('connection', (socket) => {
     console.log(`새로운 접속자: ${socket.id}`);
 
