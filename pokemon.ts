@@ -1,5 +1,5 @@
 import data from './data.json' with { type: 'json' };
-import getTypeEffectiveness from './typeChart.js';
+import getTypeEffectiveness from './typeChart.ts';
 
 // 1. 기술 인터페이스 정의 (C++의 struct 역할)
 export interface Move {
@@ -19,16 +19,16 @@ export class Pokemon {
     // 26-01-15. 스피드 항목 추가
     public speed: number;
     // 26-01-15. 타입 항목 추가
-    public type: string[] = [];
+    public types: string[] = [];
 
-    constructor(name: string, hp: number, atk: number, speed: number, type: string[]) 
+    constructor(name: string, hp: number, atk: number, speed: number, types: string[]) 
     {
         this.name = name;
         this.hp = hp;
         this.maxHp = hp;
         this.atk = atk;
         this.speed = speed || 10; // 기본값 처리
-        this.type = type; 
+        this.types = types; 
         for(var i = 0; i<4; i++)
         {
             this.learnMove(data.moves[i]!);
@@ -53,7 +53,7 @@ export class Pokemon {
     }
 
     // 특정 기술로 공격하기
-    useMove(moveIndex: number, target: Pokemon): void {
+    useMove(moveIndex: number, target: Pokemon,): void {
         const move = this.moves[moveIndex];
         if (!move) {
             console.log("잘못된 기술 선택입니다.");
@@ -61,11 +61,16 @@ export class Pokemon {
         }
 
         // 배율 불러오기
-        const Tmultiplier = getTypeEffectiveness(move.type, target.type[0] || "Default") * getTypeEffectiveness(move.type, target.type[1] || "Default");
+        let Tmultiplier = 1.0;
+        target.types.forEach((defType) => {
+        const eff = getTypeEffectiveness(move.type, defType);
+        Tmultiplier *= eff;
+    });
 
         // 데미지 계산
         let damage = Math.floor(move.power * 0.5 + this.atk * 0.5);
-        damage = Math.floor(damage * Tmultiplier); // ★ 배율 적용
+        damage = Math.floor(damage * Tmultiplier); // ★ 속성에 따른 배율 적용
+        console.log(Tmultiplier);
 
         // 3. 로그 메시지 생성 (효과가 굉장했다!)
         let effectivenessMsg = "";
