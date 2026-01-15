@@ -109,10 +109,20 @@ function resolveTurn() {
 
     if (!move1 || !move2) return; // 에러 방지
 
-    // 스피드 계산 로직 (지금은 간단하게 무조건 P1 선공, 나중에 speed 비교 추가)
-    // 순서: P1 공격 -> P2 생존 확인 -> P2 공격
+    // 스피드 계산 로직
+    let first: { mon: any, move: any, target: any, role: string };
+    let second: { mon: any, move: any, target: any, role: string };
+
+    // P1이 더 빠르거나, 스피드가 같으면 랜덤으로 P1 선공 (Speed Tie)
+    if (p1.speed > p2.speed || (p1.speed === p2.speed && Math.random() < 0.5)) {
+        first = { mon: p1, move: move1, target: p2, role: 'P1' };
+        second = { mon: p2, move: move2, target: p1, role: 'P2' };
+    } else {
+        first = { mon: p2, move: move2, target: p1, role: 'P2' };
+        second = { mon: p1, move: move1, target: p2, role: 'P1' };
+    }
     
-    // --- Phase 1: P1 공격 ---
+    /* --- Phase 1: P1 공격 ---
     io.emit('chat message', `⚡ ${p1.name}의 ${move1.name}!`);
     p1.useMove(p1MoveIndex!, p2); // pokemon.ts의 useMove 호출
 
@@ -131,6 +141,22 @@ function resolveTurn() {
         resetGame();
         return;
     }
+    */
+
+    // --- 선공 ---
+    io.emit('chat message', `💨 ${first.mon.name}이(가) 더 빠르다!`);
+    io.emit('chat message', `⚔️ ${first.mon.name}의 ${first.move.name}!`);
+    first.mon.useMove(first.mon.moves.indexOf(first.move), first.target);
+
+    if (first.target.hp <= 0) {
+        io.emit('chat message', `💀 ${first.target.name} 쓰러짐! ${first.role} 승리!`);
+        resetGame();
+        return;
+    }
+
+    // --- 후공 ---
+    io.emit('chat message', `⚔️ ${second.mon.name}의 ${second.move.name}!`);
+    second.mon.useMove(second.mon.moves.indexOf(second.move), second.target);
 
     // --- Phase 3: 턴 종료 및 상태 업데이트 ---
     // 선택 초기화

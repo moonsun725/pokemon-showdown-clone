@@ -1,7 +1,8 @@
 {
   "pokedex": [
-    { "name": "피카츄", "hp": 100, "atk": 55, "type": "Electric" },
-    { "name": "파이리", "hp": 110, "atk": 52, "type": "Fire" }
+    { "name": "피카츄", "hp": 100, "atk": 55, "type": "Electric", "speed": 90 },
+    { "name": "꼬부기", "hp": 120, "atk": 48, "type": "Water", "speed": 43 },
+    { "name": "파이리", "hp": 110, "atk": 52, "type": "Fire", "speed": 65 }
   ],
   "moves": [
     { "name": "10만볼트", "power": 90, "type": "Electric" },

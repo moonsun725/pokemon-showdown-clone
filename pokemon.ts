@@ -15,11 +15,15 @@ export class Pokemon {
     // 2. 기술 배열 추가 (C++의 std::vector<Move> 느낌)
     public moves: Move[] = [];
 
-    constructor(name: string, hp: number, atk: number) {
+    // 01-15. 스피드 항목 추가
+    public speed: number;
+
+    constructor(name: string, hp: number, atk: number, speed: number) {
         this.name = name;
         this.hp = hp;
         this.maxHp = hp;
         this.atk = atk;
+        this.speed = speed || 10; // 기본값 처리
         for(var i = 0; i<4; i++)
         {
             this.learnMove(data.moves[i]!);
@@ -82,7 +86,7 @@ export function createPokemon(name: string): Pokemon {
     }
 
     // 2. 찾은 데이터로 객체 생성 및 반환
-    return new Pokemon(pData.name, pData.hp, pData.atk);
+    return new Pokemon(pData.name, pData.hp, pData.atk, pData.speed);
 }
 
 
