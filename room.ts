@@ -31,6 +31,26 @@ export class GameRoom {
         }
         return 'spectator';
     }
+    
+    // 유저 퇴장 처리
+    leave(socketId: string) {
+        const role = this.players[socketId];
+        
+        // socketId 매핑 정보 삭제
+        delete this.players[socketId];
+
+        if (role === 'p1') {
+            this.p1 = null; // 자리 비우기 (객체 삭제)
+            this.p1MoveIndex = null; // 선택 정보 초기화
+            console.log(`[Room: ${this.roomId}] Player 1 퇴장. 자리가 비었습니다.`);
+        } else if (role === 'p2') {
+            this.p2 = null;
+            this.p2MoveIndex = null;
+            console.log(`[Room: ${this.roomId}] Player 2 퇴장. 자리가 비었습니다.`);
+        }
+
+        return role; // 누가 나갔는지 반환 (로그용)
+    }
 
     // 공격 예약 처리
     handleAttack(socketId: string, moveIndex: number, io: Server) {
@@ -83,13 +103,19 @@ export class GameRoom {
 
         if (first.target.hp <= 0) {
             io.to(this.roomId).emit('chat message', `💀 ${first.target.name} 쓰러짐! ${first.role} 승리!`);
-            resetGame();
+            this.resetGame(io);
             return;
         }
 
         // --- 후공 ---
         io.to(this.roomId).emit('chat message', `⚔️ ${second.mon.name}의 ${second.move.name}!`);
         second.mon.useMove(second.mon.moves.indexOf(second.move), second.target);
+
+        if (second.target.hp <= 0) {
+            io.to(this.roomId).emit('chat message', `💀 ${second.target.name} 쓰러짐! ${second.role} 승리!`);
+            this.resetGame(io);
+            return;
+        }
 
         // --- Phase 3: 턴 종료 및 상태 업데이트 ---
         // 선택 초기화

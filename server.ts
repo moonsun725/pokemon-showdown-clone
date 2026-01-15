@@ -5,7 +5,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 
 // ★ 우리가 만든 GameRoom 클래스 가져오기 (확장자 .js 주의!)
-import { GameRoom } from './room.js'; 
+import { GameRoom } from './room.ts'; 
 
 // 1. 기본 설정 (ES Module 환경에서 경로 변수 만들기)
 const __filename = fileURLToPath(import.meta.url);
@@ -68,8 +68,21 @@ io.on('connection', (socket) => {
 
     // --- 7. 퇴장 처리 ---
     socket.on('disconnect', () => {
-        console.log(`[시스템] 퇴장: ${socket.id}`);
-        // 필요하다면 room.leave(socket.id) 등을 구현해서 호출
+        console.log(`[시스템] 연결 종료: ${socket.id}`);
+        
+        // 유저가 있던 방에서 내보내기
+        if (rooms[roomId]) {
+            const room = rooms[roomId];
+            const leftRole = room.leave(socket.id); // ★ leave 호출
+
+            // 만약 플레이어가 나갔다면, 남은 사람들에게 화면 갱신 요청
+            if (leftRole === 'p1' || leftRole === 'p2') {
+                io.to(roomId).emit('chat message', `[시스템] ${leftRole} 님이 퇴장하여 게임이 초기화됩니다.`);
+                
+                // 게임 상태가 바뀌었으니(p1이 null이 됨) UI 업데이트 방송
+                room.broadcastState(io); 
+            }
+        }
     });
 });
 

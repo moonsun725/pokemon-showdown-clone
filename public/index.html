@@ -62,9 +62,10 @@
 
 // 1. 서버로부터 역할 할당 받기
     socket.on('role_assigned', (data) => {
+        console.log('역할 할당 받음:', myRole);
         myRole = data.role;
-        const roleText = myRole === 'player1' ? "Player 1 (피카츄)" : 
-                         myRole === 'player2' ? "Player 2 (파이리)" : "관전자 Mode";
+        const roleText = myRole === 'p1' ? "Player 1 (피카츄)" : 
+                         myRole === 'p2' ? "Player 2 (파이리)" : "관전자 Mode";
         
         // 화면 제목에 표시 (선택사항)
         document.querySelector('h1').innerText = `포켓몬 쇼다운 - 당신은 [${roleText}]`;
@@ -85,9 +86,9 @@
         moveButtonsContainer.innerHTML = ''; 
 
         let myMoves = [];
-        if (myRole === 'player1') {
+        if (myRole === 'p1') {
             myMoves = data.p1.moves;
-        } else if (myRole === 'player2') {
+        } else if (myRole === 'p2') {
             myMoves = data.p2.moves;
         } else {
             moveButtonsContainer.innerText = "관전 중입니다. (조작 불가)";
