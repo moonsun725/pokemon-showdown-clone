@@ -1,4 +1,5 @@
 import data from './data.json' with { type: 'json' };
+import getTypeEffectiveness from './typeChart.js';
 
 // 1. 기술 인터페이스 정의 (C++의 struct 역할)
 export interface Move {
@@ -15,15 +16,19 @@ export class Pokemon {
     // 2. 기술 배열 추가 (C++의 std::vector<Move> 느낌)
     public moves: Move[] = [];
 
-    // 01-15. 스피드 항목 추가
+    // 26-01-15. 스피드 항목 추가
     public speed: number;
+    // 26-01-15. 타입 항목 추가
+    public type: string[] = [];
 
-    constructor(name: string, hp: number, atk: number, speed: number) {
+    constructor(name: string, hp: number, atk: number, speed: number, type: string[]) 
+    {
         this.name = name;
         this.hp = hp;
         this.maxHp = hp;
         this.atk = atk;
         this.speed = speed || 10; // 기본값 처리
+        this.type = type; 
         for(var i = 0; i<4; i++)
         {
             this.learnMove(data.moves[i]!);
@@ -55,8 +60,22 @@ export class Pokemon {
             return;
         }
 
-        console.log(`${this.name}의 ${move.name} 공격!`);
-        target.takeDamage(move.power); // 실제 계산은 더 복잡하지만 우선 power로 적용
+        // 배율 불러오기
+        const Tmultiplier = getTypeEffectiveness(move.type, target.type[0] || "Default") * getTypeEffectiveness(move.type, target.type[1] || "Default");
+
+        // 데미지 계산
+        let damage = Math.floor(move.power * 0.5 + this.atk * 0.5);
+        damage = Math.floor(damage * Tmultiplier); // ★ 배율 적용
+
+        // 3. 로그 메시지 생성 (효과가 굉장했다!)
+        let effectivenessMsg = "";
+        if (Tmultiplier > 1) effectivenessMsg = " (효과가 굉장했다!)";
+        if (Tmultiplier < 1 && Tmultiplier > 0) effectivenessMsg = " (효과가 별로인 듯하다...)";
+        if (Tmultiplier === 0) effectivenessMsg = " (효과가 없다!)";
+        
+        // 피해 적용
+        target.takeDamage(damage);
+        console.log(`[Battle] ${this.name}의 ${move.name} 공격!${effectivenessMsg}`);
     }
 
     takeDamage(amount: number): void {
@@ -86,7 +105,7 @@ export function createPokemon(name: string): Pokemon {
     }
 
     // 2. 찾은 데이터로 객체 생성 및 반환
-    return new Pokemon(pData.name, pData.hp, pData.atk, pData.speed);
+    return new Pokemon(pData.name, pData.hp, pData.atk, pData.speed, pData.type);
 }
 
 
