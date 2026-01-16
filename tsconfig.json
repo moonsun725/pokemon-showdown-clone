@@ -2,15 +2,16 @@
   // Visit https://aka.ms/tsconfig to read more about this file
   "compilerOptions": {
     // File Layout
-    // "rootDir": "./src",
-    // "outDir": "./dist",
+    "rootDir": "./src",
+    "outDir": "./dist",
 
     // Environment Settings
     // See also https://aka.ms/tsconfig/module
-    "module": "nodenext",
+    "module": "NodeNext",
     "moduleResolution": "NodeNext",
-    "target": "esnext",
+    "target": "ESnext",
     "types": [],
+    "forceConsistentCasingInFileNames": true,
     // For nodejs:
     // "lib": ["esnext"],
     // "types": ["node"],
@@ -46,5 +47,9 @@
     "noUncheckedSideEffectImports": true,
     "moduleDetection": "force",
     "skipLibCheck": true,
+  },
+
+  "ts-node": {
+      "esm": true                       /* ts-node가 ESM 모드로 동작하게 설정 */
   }
 }

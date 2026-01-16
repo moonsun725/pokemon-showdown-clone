@@ -1,22 +1,14 @@
-import data_M from './Data/moves.json' with { type: 'json' };
-import data_P from './Data/pokedex.json' with { type: 'json' };
-import getTypeEffectiveness from './typeChart.js';
+import data_M from '../Data/moves.json' with { type: 'json' };
+import data_P from '../Data/pokedex.json' with { type: 'json' };
+import getTypeEffectiveness from '../BattleSystem/typeChart.js';
+import type { Rank } from '../BattleSystem/Rank.js';
+import { RankToMultiplier } from '../BattleSystem/Rank.js';
 
 // 1. 기술 인터페이스 정의 (C++의 struct 역할)
 export interface Move {
     name: string;
     power: number;
     type: string;
-}
-
-export interface Rank{
-    atk: number; // 당장은 공격 수치만 쓸거야
-    def: number;
-    spd: number;
-    satk: number;
-    sdef: number;
-    acc: number;
-    eva: number;
 }
 
 export class Pokemon {
@@ -33,7 +25,7 @@ export class Pokemon {
     public types: string[] = [];
 
     public Rank: Rank = {
-        atk: 0,
+        atk: 1, // 새끼 불요의검 터뜨렸노 ㅋㅋ
         def: 0, 
         spd: 0,
         satk: 0,
@@ -88,8 +80,11 @@ export class Pokemon {
             Tmultiplier *= eff;
         });
 
+        let Rmultiplier = RankToMultiplier(this.Rank.atk); // 공격 랭크 넣고 돌려
+        this.atk = Math.floor(this.atk * Rmultiplier); // 공격 보정치. 계산 후 버릴때는 버림
+
         // 데미지 계산
-        let damage = Math.floor(move.power * 0.5 + this.atk * 0.5);
+        let damage = Math.floor(move.power * this.atk * 0.5);
         damage = Math.floor(damage * Tmultiplier); // ★ 속성에 따른 배율 적용
         console.log(Tmultiplier);
 
