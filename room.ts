@@ -1,7 +1,7 @@
 // room.ts
 import { Server } from 'socket.io';
-import { Pokemon, createPokemon,} from './pokemon.ts';
-import type { Move } from './pokemon.ts';
+import { Pokemon, createPokemon,} from './pokemon.js';
+import type { Move } from './pokemon.js';
 
 export class GameRoom {
     public roomId: string;
