@@ -76,6 +76,11 @@ export class Pokemon {
             return;
         }
 
+        console.log(`[Battle] ${this.name}의 ${move.name} 공격!`);
+        if (!this.CheckAcuracy(move, target)) {
+            console.log(`상대 ${target.name}에게는 맞지 않았다!`);
+            return;
+        }
 
         let DMGRes = calculateDamage(this, target, move);
 
@@ -83,11 +88,11 @@ export class Pokemon {
         if (DMGRes.effectiveness > 1) effectivenessMsg = " (효과가 굉장했다!)";
         if (DMGRes.effectiveness < 1 && DMGRes.effectiveness > 0) effectivenessMsg = " (효과가 별로인 듯하다...)";
         if (DMGRes.effectiveness === 0) effectivenessMsg = " (효과가 없다!)";
-        
+        console.log(`${effectivenessMsg}`);
 
         // 피해 적용
         target.takeDamage(DMGRes.damage);
-        console.log(`[Battle] ${this.name}의 ${move.name} 공격!${effectivenessMsg}`);
+        
     }
 
     modifyRank(stat: keyof Rank, amount: number): void {
@@ -106,8 +111,15 @@ export class Pokemon {
 
     CheckAcuracy(move: Move, target: Pokemon): boolean {
         
+        if (move.accuracy === null) {
+            return true; // 명중률이 없는 기술은 항상 명중
+        }
+        else {
+            // 명중률 계산 (간단한 예시)
+            const random = Math.random() * 100;
+            return random < move.accuracy;
+        }
         
-        return true;
     }
 }
 
