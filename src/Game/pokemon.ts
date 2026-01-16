@@ -10,6 +10,8 @@ export interface Move {
     name: string;
     power: number;
     type: string;
+    accuracy: number | null; // 명중률 추가 (null은 명중률이 없는 기술)
+    category: string; // 물리, 특수, 상태 구분(현재 사용 x)
 }
 
 export class Pokemon {
@@ -26,7 +28,7 @@ export class Pokemon {
     public types: string[] = [];
 
     public Rank: Rank = {
-        atk: 0, // 새끼 불요의검 터뜨렸노 ㅋㅋ
+        atk: 0, 
         def: 0, 
         spd: 0,
         satk: 0,
@@ -103,6 +105,7 @@ export class Pokemon {
     }
 
     CheckAcuracy(move: Move, target: Pokemon): boolean {
+        
         
         return true;
     }
