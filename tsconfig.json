@@ -49,6 +49,12 @@
     "skipLibCheck": true,
   },
 
+  "exclude": [
+    "node_modules",
+    "expired",     // <--- 여기! expired 폴더를 검사 목록에서 뺍니다.
+    "dist"
+  ],
+
   "ts-node": {
       "esm": true                       /* ts-node가 ESM 모드로 동작하게 설정 */
   }
