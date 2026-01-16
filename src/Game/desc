@@ -1,3 +1,3 @@
 서버 실행하기
-* npx tsx src/Game/server.ts 
+* npx tsx src/server.ts 
 파일 경로를 정확하게 적어줘야 함 ㅇㅇ

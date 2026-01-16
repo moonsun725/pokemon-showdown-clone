@@ -3,6 +3,7 @@ import data_P from '../Data/pokedex.json' with { type: 'json' };
 import getTypeEffectiveness from '../BattleSystem/typeChart.js';
 import type { Rank } from '../BattleSystem/Rank.js';
 import { RankToMultiplier } from '../BattleSystem/Rank.js';
+import { calculateDamage } from '../BattleSystem/dmgCalc.js';
 
 // 1. 기술 인터페이스 정의 (C++의 struct 역할)
 export interface Move {
@@ -25,7 +26,7 @@ export class Pokemon {
     public types: string[] = [];
 
     public Rank: Rank = {
-        atk: 1, // 새끼 불요의검 터뜨렸노 ㅋㅋ
+        atk: 0, // 새끼 불요의검 터뜨렸노 ㅋㅋ
         def: 0, 
         spd: 0,
         satk: 0,
@@ -73,29 +74,17 @@ export class Pokemon {
             return;
         }
 
-        // 배율 불러오기
-        let Tmultiplier = 1.0;
-        target.types.forEach((defType) => {
-            const eff = getTypeEffectiveness(move.type, defType);
-            Tmultiplier *= eff;
-        });
 
-        let Rmultiplier = RankToMultiplier(this.Rank.atk); // 공격 랭크 넣고 돌려
-        this.atk = Math.floor(this.atk * Rmultiplier); // 공격 보정치. 계산 후 버릴때는 버림
+        let DMGRes = calculateDamage(this, target, move);
 
-        // 데미지 계산
-        let damage = Math.floor(move.power * this.atk * 0.5);
-        damage = Math.floor(damage * Tmultiplier); // ★ 속성에 따른 배율 적용
-        console.log(Tmultiplier);
-
-        // 3. 로그 메시지 생성 (효과가 굉장했다!)
         let effectivenessMsg = "";
-        if (Tmultiplier > 1) effectivenessMsg = " (효과가 굉장했다!)";
-        if (Tmultiplier < 1 && Tmultiplier > 0) effectivenessMsg = " (효과가 별로인 듯하다...)";
-        if (Tmultiplier === 0) effectivenessMsg = " (효과가 없다!)";
+        if (DMGRes.effectiveness > 1) effectivenessMsg = " (효과가 굉장했다!)";
+        if (DMGRes.effectiveness < 1 && DMGRes.effectiveness > 0) effectivenessMsg = " (효과가 별로인 듯하다...)";
+        if (DMGRes.effectiveness === 0) effectivenessMsg = " (효과가 없다!)";
         
+
         // 피해 적용
-        target.takeDamage(damage);
+        target.takeDamage(DMGRes.damage);
         console.log(`[Battle] ${this.name}의 ${move.name} 공격!${effectivenessMsg}`);
     }
 
@@ -111,6 +100,11 @@ export class Pokemon {
     takeDamage(amount: number): void {
         this.hp -= amount;
         console.log(`${this.name}의 남은 HP: ${this.hp}`);
+    }
+
+    CheckAcuracy(move: Move, target: Pokemon): boolean {
+        
+        return true;
     }
 }
 
