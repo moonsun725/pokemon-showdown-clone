@@ -1,0 +1,10 @@
+{
+    "debufs":[
+    {"info": "BRN", "name": "화상", "dmg" : 0.0625, "script": "burn"},
+    {"info": "PSN", "name": "독", "dmg" : 0.125, "isToxic": false, "script": "poison"},
+    {"info": "PSN", "name": "맹독", "dmg" : 0.0625, "isToxic": true, "script": "toxic"},
+    {"info": "PAR", "name": "마비", "dmg" : 0.0625, "script": "paralysis"},
+    {"info": "SLP", "name": "수면", "wakeChance": 0, "script": "sleep"},
+    {"info": "FRZ", "name": "얼음", "wakeChance": 0.2, "script": "freeze"}
+    ]
+}
