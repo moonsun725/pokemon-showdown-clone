@@ -2,7 +2,7 @@ import data_M from '../Data/moves.json' with { type: 'json' };
 import data_P from '../Data/pokedex.json' with { type: 'json' };
 import getTypeEffectiveness from '../BattleSystem/typeChart.js';
 import type { Rank } from '../BattleSystem/Rank.js';
-import { RankToMultiplier } from '../BattleSystem/Rank.js';
+import { RankToMultiplier, RankToMultiplierAccEv, RankToMultiplierCrit } from '../BattleSystem/Rank.js';
 import { calculateDamage } from '../BattleSystem/dmgCalc.js';
 
 // 1. 기술 인터페이스 정의 (C++의 struct 역할)
@@ -35,6 +35,7 @@ export class Pokemon {
         sdef: 0,
         acc: 0,
         eva: 0,
+        crit: 0
     }
 
     constructor(name: string, hp: number, atk: number, speed: number, types: string[]) 
@@ -82,6 +83,13 @@ export class Pokemon {
             return;
         }
 
+        // 변화기(Status) 처리: 데미지 계산 건너뛰기
+        if (move.category === 'Status') {
+            console.log(`(변화기 발동 로직이 들어갈 곳)`);
+            // 여기서 return 하거나, 아래 데미지 로직을 else로 감싸야 함
+            return; 
+        }
+
         let DMGRes = calculateDamage(this, target, move);
 
         let effectivenessMsg = "";
@@ -92,7 +100,7 @@ export class Pokemon {
 
         // 피해 적용
         target.takeDamage(DMGRes.damage);
-        
+        return;
     }
 
     modifyRank(stat: keyof Rank, amount: number): void {
@@ -117,7 +125,7 @@ export class Pokemon {
         else {
             // 명중률 계산 (간단한 예시)
             const random = Math.random() * 100;
-            return random < move.accuracy;
+            return random < move.accuracy*(RankToMultiplierAccEv(this.Rank.acc-target.Rank.eva));
         }
         
     }
