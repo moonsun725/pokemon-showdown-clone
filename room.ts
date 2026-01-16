@@ -61,7 +61,7 @@ export class GameRoom {
         if (role === 'p2') this.p2MoveIndex = moveIndex;
 
         // ★ 중요: 방 안에 있는 사람들에게만 전송 (io.to)
-        io.to(this.roomId).emit('move_locked');
+        io.to(socketId).emit('move_locked'); // >< this.RoomId: 방 전체에 전송, io.to(socketId): 해당 소켓에만 전송
 
         // 둘 다 선택했는지 확인
         if (this.p1MoveIndex !== null && this.p2MoveIndex !== null) {
@@ -75,13 +75,13 @@ export class GameRoom {
     // 턴 계산 로직 (기존 함수 이식)
     private resolveTurn(io: Server) {
         
-        if (!this.p1 || !this.p2) return; // 안전장치
+        if (!this.p1 || !this.p2) return; // >< 안전장치
 
         // 기술 객체 가져오기 (p1MoveIndex가 null이 아님을 보장해야 함)
         const move1 = this.p1.moves[this.p1MoveIndex!];
         const move2 = this.p2.moves[this.p2MoveIndex!];
 
-        if (!move1 || !move2) return; // 에러 방지
+        if (!move1 || !move2) return; // 에러 방지 >< : p1, p2, move1, move2가 null일 경우 방어
 
         // 스피드 계산 로직
         let first: { mon: any, move: any, target: any, role: string };

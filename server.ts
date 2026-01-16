@@ -1,92 +1,92 @@
+// server.ts
 import express from 'express';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
 import path from 'path';
 import { fileURLToPath } from 'url';
-
-// ★ 우리가 만든 GameRoom 클래스 가져오기 (확장자 .js 주의!)
 import { GameRoom } from './room.ts'; 
 
-// 1. 기본 설정 (ES Module 환경에서 경로 변수 만들기)
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// 2. 서버 인스턴스 생성
 const app = express();
 const httpServer = createServer(app);
 const io = new Server(httpServer);
 
-// 3. 정적 파일 호스팅 (public 폴더 공개)
 app.use(express.static(path.join(__dirname, 'public')));
 
-
-// ==========================================
-// ★ 4. 방 관리자 (Room Manager) - 전역 변수
-// ==========================================
-// C++: std::map<string, GameRoom*> rooms;
+// 방 관리자 (Map)
 const rooms: { [roomId: string]: GameRoom } = {};
 
+// ★ 소켓 ID가 어느 방에 있는지 추적하는 맵 (SocketID -> RoomID)
+const socketToRoom: { [socketId: string]: string } = {};
+
 io.on('connection', (socket) => {
-    console.log(`[시스템] 접속: ${socket.id}`);
+    console.log(`[Lobby] 접속: ${socket.id}`);
 
-    // --- 5. 방 입장 로직 (Routing) ---
-    // 지금은 테스트를 위해 모두가 'room1'이라는 하나의 방으로 들어갑니다.
-    // (나중에는 클라이언트에서 roomID를 보내주게 수정 가능)
-    const roomId = 'room1';
+    // 1. 방 입장 요청 처리 (클라이언트가 'join_game' 이벤트를 보내면 실행)
+    socket.on('join_game', (roomId) => {
+        // 이미 방에 들어가 있다면 무시하거나 기존 방 나가기 처리 (여기선 생략)
+        if (socketToRoom[socket.id]) return;
 
-    socket.join(roomId); // Socket.io의 그룹 기능(채널 입장)
+        console.log(`[System] ${socket.id} 님이 [${roomId}] 방 입장을 요청했습니다.`);
 
-    // 방이 없으면 새로 생성 (Lazy Initialization)
-    if (!rooms[roomId]) {
-        console.log(`[시스템] 새로운 방 생성: ${roomId}`);
-        rooms[roomId] = new GameRoom(roomId);
-    }
-    
-    // 해당 방 인스턴스를 가져옴
-    const room = rooms[roomId];
+        // Socket.io 룸 입장
+        socket.join(roomId);
+        socketToRoom[socket.id] = roomId; // 매핑 기록
 
-    // 방에 플레이어 추가 요청
-    const myRole = room.join(socket.id);
+        // 방 인스턴스 없으면 생성 (Lazy Init)
+        if (!rooms[roomId]) {
+            console.log(`[System] 새로운 방 생성: ${roomId}`);
+            rooms[roomId] = new GameRoom(roomId);
+        }
 
-    // 결과 전송
-    socket.emit('role_assigned', { role: myRole });
-    
-    // 방 전체에 알림 & 현재 상태 동기화
-    io.to(roomId).emit('chat message', `[시스템] ${socket.id}님이 ${myRole}(으)로 입장했습니다.`);
-    room.broadcastState(io);
+        const room = rooms[roomId];
+        const myRole = room.join(socket.id);
 
+        // 결과 전송
+        socket.emit('role_assigned', { role: myRole, roomId: roomId });
+        
+        // 방 전체 알림 & UI 갱신
+        io.to(roomId).emit('chat message', `[시스템] 새로운 유저(${myRole})가 입장했습니다.`);
+        room.broadcastState(io);
+    });
 
-    // --- 6. 공격 패킷 라우팅 (Packet Dispatching) ---
+    // 2. 공격 요청 처리 (라우팅)
     socket.on('attack', (moveIndex) => {
-        // 유저가 속한 방을 찾아서 해당 방의 handleAttack 함수를 호출
-        // (지금은 무조건 room1이지만, 나중엔 socket.rooms를 확인해서 처리)
-        if (rooms[roomId]) {
+        // ★ 소켓 맵을 통해 이 유저가 어느 방 소속인지 찾음
+        const roomId = socketToRoom[socket.id];
+        if (roomId && rooms[roomId]) {
             rooms[roomId].handleAttack(socket.id, moveIndex, io);
         }
     });
 
-
-    // --- 7. 퇴장 처리 ---
+    // 3. 퇴장 처리
     socket.on('disconnect', () => {
-        console.log(`[시스템] 연결 종료: ${socket.id}`);
-        
-        // 유저가 있던 방에서 내보내기
-        if (rooms[roomId]) {
+        const roomId = socketToRoom[socket.id];
+        if (roomId && rooms[roomId]) {
+            console.log(`[System] 퇴장: ${socket.id} (Room: ${roomId})`);
+            
             const room = rooms[roomId];
-            const leftRole = room.leave(socket.id); // ★ leave 호출
+            const leftRole = room.leave(socket.id);
 
-            // 만약 플레이어가 나갔다면, 남은 사람들에게 화면 갱신 요청
             if (leftRole === 'p1' || leftRole === 'p2') {
                 io.to(roomId).emit('chat message', `[시스템] ${leftRole} 님이 퇴장하여 게임이 초기화됩니다.`);
-                
-                // 게임 상태가 바뀌었으니(p1이 null이 됨) UI 업데이트 방송
-                room.broadcastState(io); 
+                room.broadcastState(io);
+            }
+            
+            // 맵에서 삭제
+            delete socketToRoom[socket.id];
+            
+            // 방이 비었으면 방 삭제 (선택 사항: 메모리 관리)
+            if (Object.keys(room.players).length === 0) {
+                 delete rooms[roomId];
+                 console.log(`[System] 방 삭제됨: ${roomId}`);
             }
         }
     });
 });
 
-// 8. 서버 리슨 (Port Open)
 const PORT = 3000;
 httpServer.listen(PORT, () => {
     console.log(`Server running on http://localhost:${PORT}`);

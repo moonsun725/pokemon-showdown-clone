@@ -4,121 +4,162 @@
     <meta charset="UTF-8">
     <title>포켓몬 쇼다운 클론</title>
     <style>
-        body { font-family: sans-serif; }
-        #messages { list-style-type: none; margin: 0; padding: 0; }
+        body { font-family: sans-serif; padding: 20px; }
+        /* 간단한 화면 전환 스타일 */
+        .screen { display: none; }
+        .active { display: block; }
+        
+        /* 로비 스타일 */
+        #lobby-screen { text-align: center; margin-top: 100px; }
+        input { padding: 10px; font-size: 16px; }
+        button { padding: 10px 20px; font-size: 16px; cursor: pointer; }
+        
+        /* 게임 로그 등 기존 스타일 */
+        #messages { list-style-type: none; margin: 0; padding: 0; border-top: 1px solid #ccc; margin-top: 20px;}
         #messages li { padding: 5px 10px; }
         #messages li:nth-child(odd) { background: #eee; }
-        
-        /* 버튼 스타일 좀 더 예쁘게 */
-        button {
-            background-color: #f0f0f0;
-            border: 1px solid #999;
-            border-radius: 4px;
-            transition: background-color 0.2s;
-        }
-        button:hover {
-            background-color: #ddd;
-        }
     </style>
 </head>
 <body>
-    <h1>포켓몬 쇼다운 프로토타입</h1>
-    
-    <div style="display: flex; gap: 50px; margin-bottom: 20px;">
-        <div id="p1-status" style="border: 1px solid #ccc; padding: 10px; min-width: 150px;">
-            <h3>Player 1</h3>
-            <div id="p1-name">?</div>
-            <div id="p1-hp">HP: ? / ?</div>
-        </div>
-        <div id="p2-status" style="border: 1px solid #ccc; padding: 10px; min-width: 150px;">
-            <h3>Player 2</h3>
-            <div id="p2-name">?</div>
-            <div id="p2-hp">HP: ? / ?</div>
-        </div>
+
+    <div id="lobby-screen" class="screen active">
+        <h1>포켓몬 쇼다운 로비</h1>
+        <p>입장할 방 이름을 입력하세요 (친구와 같은 이름을 쓰세요!)</p>
+        <input type="text" id="room-input" placeholder="예: 초보만" />
+        <button id="btn-join">입장하기</button>
     </div>
 
-    <div id="controls-area" style="margin: 20px 0; padding: 10px; border: 2px dashed #888;">
-        <h4>기술 선택 (Move Selection)</h4>
-        <div id="move-buttons" style="display: flex; gap: 10px;"></div>
-    </div>
+    <div id="game-screen" class="screen">
+        <h1>포켓몬 쇼다운 - 대기 중</h1>
+        
+        <div style="display: flex; gap: 50px; margin-bottom: 20px;">
+            <div id="p1-status" style="border: 1px solid #ccc; padding: 10px; min-width: 150px;">
+                <h3>Player 1</h3>
+                <div id="p1-name">?</div>
+                <div id="p1-hp">HP: ? / ?</div>
+            </div>
+            <div id="p2-status" style="border: 1px solid #ccc; padding: 10px; min-width: 150px;">
+                <h3>Player 2</h3>
+                <div id="p2-name">?</div>
+                <div id="p2-hp">HP: ? / ?</div>
+            </div>
+        </div>
 
-    <hr>
-    <h3>전투 로그</h3>
-    <ul id="messages"></ul>
+        <div id="controls-area" style="margin: 20px 0; padding: 10px; border: 2px dashed #888;">
+            <h4>기술 선택</h4>
+            <div id="move-buttons" style="display: flex; gap: 10px;"></div>
+        </div>
+
+        <hr>
+        <h3>전투 로그</h3>
+        <ul id="messages"></ul>
+    </div>
 
     <script src="/socket.io/socket.io.js"></script>
     <script>
         const socket = io();
-        
+
+        // 화면 요소들
+        const lobbyScreen = document.getElementById('lobby-screen');
+        const gameScreen = document.getElementById('game-screen');
+        const roomInput = document.getElementById('room-input');
+        const btnJoin = document.getElementById('btn-join');
+        const gameTitle = document.querySelector('#game-screen h1');
+
+        // 게임 UI 요소들
         const p1Name = document.getElementById('p1-name');
         const p1Hp = document.getElementById('p1-hp');
         const p2Name = document.getElementById('p2-name');
         const p2Hp = document.getElementById('p2-hp');
         const moveButtonsContainer = document.getElementById('move-buttons');
         const messages = document.getElementById('messages');
-        
-        // ★ 내 역할을 저장할 변수
-        let myRole = '';
 
-// 1. 서버로부터 역할 할당 받기
-    socket.on('role_assigned', (data) => {
-        console.log('역할 할당 받음:', myRole);
-        myRole = data.role;
-        const roleText = myRole === 'p1' ? "Player 1 (피카츄)" : 
-                         myRole === 'p2' ? "Player 2 (파이리)" : "관전자 Mode";
-        
-        // 화면 제목에 표시 (선택사항)
-        document.querySelector('h1').innerText = `포켓몬 쇼다운 - 당신은 [${roleText}]`;
-        
-        // 역할이 정해졌으니 UI를 한번 갱신해달라고 요청하거나, 
-        // 다음 update_ui 때 반영되기를 기다립니다.
-    });
+        let myRole = ''; 
 
-    // 2. UI 업데이트 로직 수정
-    socket.on('update_ui', (data) => {
-        // 텍스트 갱신 (기존 코드 그대로)
-        p1Name.innerText = data.p1.name;
-        p1Hp.innerText = `HP: ${data.p1.hp} / ${data.p1.maxHp}`;
-        p2Name.innerText = data.p2.name;
-        p2Hp.innerText = `HP: ${data.p2.hp} / ${data.p2.maxHp}`;
+        // ★ [로비] 입장 버튼 클릭 시
+        btnJoin.addEventListener('click', () => {
+            const roomId = roomInput.value.trim();
+            if(!roomId) {
+                alert("방 이름을 입력해주세요!");
+                return;
+            }
+            // 서버에 입장 요청 전송
+            socket.emit('join_game', roomId);
+        });
 
-        // ★ 버튼 그리기: 내 역할에 맞는 기술만 보여주기
-        moveButtonsContainer.innerHTML = ''; 
+        // ★ [게임] 역할 할당받으면 화면 전환
+        socket.on('role_assigned', (data) => {
+            myRole = data.role;
+            const currentRoomId = data.roomId; // 서버가 같이 보내주게 수정했음
 
-        let myMoves = [];
-        if (myRole === 'p1') {
-            myMoves = data.p1.moves;
-        } else if (myRole === 'p2') {
-            myMoves = data.p2.moves;
-        } else {
-            moveButtonsContainer.innerText = "관전 중입니다. (조작 불가)";
-            return;
-        }
+            // 1. 화면 전환 (로비 숨기기, 게임 보이기)
+            lobbyScreen.classList.remove('active');
+            gameScreen.classList.add('active');
 
-        // 버튼 생성 루프
-        if (myMoves) {
-            myMoves.forEach((move, index) => {
-                const btn = document.createElement('button');
-                btn.innerText = `${move.name}\n(${move.power})`;
-                btn.style.padding = '10px';
-                btn.style.marginRight = '5px';
-                btn.style.cursor = 'pointer';
+            // 2. 제목 설정
+            let roleText = "관전자 Mode";
+            if (myRole === 'p1') roleText = "Player 1 (피카츄)";
+            else if (myRole === 'p2') roleText = "Player 2 (파이리)";
+            
+            gameTitle.innerText = `[${currentRoomId}번 방] - ${roleText}`;
+        });
 
-                btn.onclick = () => {
-                    socket.emit('attack', index);
-                };
-                moveButtonsContainer.appendChild(btn);
-            });
-        }
-    });
+         socket.on('update_ui', (data) => {
+            if (data.p1) {
+                p1Name.innerText = data.p1.name;
+                p1Hp.innerText = `HP: ${data.p1.hp} / ${data.p1.maxHp}`;
+            }
+            if (data.p2) {
+                p2Name.innerText = data.p2.name;
+                p2Hp.innerText = `HP: ${data.p2.hp} / ${data.p2.maxHp}`;
+            }
 
-        // 로그 출력
+            moveButtonsContainer.innerHTML = ''; 
+
+            let myMoves = [];
+            if (myRole === 'p1' && data.p1) myMoves = data.p1.moves;
+            else if (myRole === 'p2' && data.p2) myMoves = data.p2.moves;
+            else {
+                if(myRole === '') moveButtonsContainer.innerText = "로딩 중...";
+                else moveButtonsContainer.innerText = "관전 중입니다.";
+                return;
+            }
+
+            if (myMoves) {
+                myMoves.forEach((move, index) => {
+                    const btn = document.createElement('button');
+                    btn.innerText = `${move.name}\n(${move.power})`;
+                    btn.style.padding = '10px';
+                    btn.style.marginRight = '5px';
+                    btn.style.cursor = 'pointer';
+
+                    btn.onclick = () => {
+                        socket.emit('attack', index);
+                    };
+                    moveButtonsContainer.appendChild(btn);
+                });
+            }
+        });
+
         socket.on('chat message', (msg) => {
             const item = document.createElement('li');
             item.textContent = msg;
             messages.appendChild(item);
-            // 로그가 많아지면 스크롤 자동 내리기
             window.scrollTo(0, document.body.scrollHeight);
+        });
+
+        socket.on('move_locked', () => {
+            const buttons = moveButtonsContainer.querySelectorAll('button'); // >< 버튼 활성화/비활성화 코드
+            buttons.forEach(btn => btn.disabled = true);
+            const li = document.createElement('li');
+            li.style.color = "blue";
+            li.textContent = "⏳ 입력 완료! 상대방 기다리는 중...";
+            messages.appendChild(li);
+        });
+
+        socket.on('turn_start', () => {
+            const buttons = moveButtonsContainer.querySelectorAll('button');
+            buttons.forEach(btn => btn.disabled = false); // >< 버튼 활성화/비활성화 코드
         });
     </script>
 </body>
