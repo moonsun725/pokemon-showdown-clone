@@ -1,0 +1,14 @@
+{
+  "pokedex": [
+    { "name": "피카츄", "hp": 100, "atk": 55, "type": ["Electric"], "speed": 90 },
+    { "name": "꼬부기", "hp": 120, "atk": 48, "type": ["Water"], "speed": 43 },
+    { "name": "파이리", "hp": 110, "atk": 52, "type": ["Fire"], "speed": 65 },
+    { "name": "이상해씨", "hp": 110, "atk": 65, "type": ["Grass", "Poison"], "speed": 70 }
+  ],
+  "moves": [
+    { "name": "10만볼트", "power": 90, "type": "Electric" },
+    { "name": "지진", "power": 100, "type": "Ground" },
+    { "name": "맹독", "power": 0, "type": "Poison" },
+    { "name": "칼춤", "power": 0, "type": "Normal" }
+  ]
+}

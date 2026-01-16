@@ -1,0 +1,8 @@
+{
+    "moves": [
+    { "name": "10만볼트", "power": 90, "type": "Electric" },
+    { "name": "지진", "power": 100, "type": "Ground" },
+    { "name": "맹독", "power": 0, "type": "Poison" },
+    { "name": "칼춤", "power": 0, "type": "Normal" }
+  ]
+}

@@ -1,11 +1,22 @@
-import data from './data.json' with { type: 'json' };
-import getTypeEffectiveness from './typeChart.ts';
+import data_M from './Data/moves.json' with { type: 'json' };
+import data_P from './Data/pokedex.json' with { type: 'json' };
+import getTypeEffectiveness from './typeChart.js';
 
 // 1. 기술 인터페이스 정의 (C++의 struct 역할)
 export interface Move {
     name: string;
     power: number;
     type: string;
+}
+
+export interface Rank{
+    atk: number; // 당장은 공격 수치만 쓸거야
+    def: number;
+    spd: number;
+    satk: number;
+    sdef: number;
+    acc: number;
+    eva: number;
 }
 
 export class Pokemon {
@@ -21,6 +32,16 @@ export class Pokemon {
     // 26-01-15. 타입 항목 추가
     public types: string[] = [];
 
+    public Rank: Rank = {
+        atk: 0,
+        def: 0, 
+        spd: 0,
+        satk: 0,
+        sdef: 0,
+        acc: 0,
+        eva: 0,
+    }
+
     constructor(name: string, hp: number, atk: number, speed: number, types: string[]) 
     {
         this.name = name;
@@ -31,7 +52,7 @@ export class Pokemon {
         this.types = types; 
         for(var i = 0; i<4; i++)
         {
-            this.learnMove(data.moves[i]!);
+            this.learnMove(data_M.moves[i]!);
         }
     }
 
@@ -63,9 +84,9 @@ export class Pokemon {
         // 배율 불러오기
         let Tmultiplier = 1.0;
         target.types.forEach((defType) => {
-        const eff = getTypeEffectiveness(move.type, defType);
-        Tmultiplier *= eff;
-    });
+            const eff = getTypeEffectiveness(move.type, defType);
+            Tmultiplier *= eff;
+        });
 
         // 데미지 계산
         let damage = Math.floor(move.power * 0.5 + this.atk * 0.5);
@@ -81,6 +102,15 @@ export class Pokemon {
         // 피해 적용
         target.takeDamage(damage);
         console.log(`[Battle] ${this.name}의 ${move.name} 공격!${effectivenessMsg}`);
+    }
+
+    modifyRank(stat: keyof Rank, amount: number): void {
+        this.Rank[stat] += amount;
+        
+        // 작성하신 clamp 로직을 여기에 적용 (이미 잘 짜셨습니다!)
+        this.Rank[stat] = Math.max(-6, Math.min(6, this.Rank[stat]));
+        
+        console.log(`${this.name}의 ${stat} 랭크가 ${this.Rank[stat]}이 되었다!`);
     }
 
     takeDamage(amount: number): void {
@@ -103,7 +133,7 @@ pikachu.useMove(0, pikachu); // 자기 자신 테스트 혹은 다른 객체 생
 // 데이터를 기반으로 포켓몬 생성 (C++의 팩토리 패턴과 유사)
 export function createPokemon(name: string): Pokemon {
     // 1. JSON 데이터에서 이름이 일치하는 포켓몬 찾기 (C++의 find_if와 유사)
-    const pData = data.pokedex.find(p => p.name === name);
+    const pData = data_P.pokedex.find(p => p.name === name);
 
     if (!pData) {
         throw new Error(`${name}을(를) 도감에서 찾을 수 없습니다.`);
