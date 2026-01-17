@@ -1,9 +1,9 @@
 {
     "moves": [
-    { "name": "10만볼트", "power": 90, "type": "Electric", "accuracy": 100, "category": "Special" },
-    { "name": "화염방사", "power": 90, "type": "Fire", "accuracy" : 90, "category": "Special"},
+    { "name": "10만볼트", "power": 90, "type": "Electric", "accuracy": 100, "category": "Special", "effect": "PAR", "chance": 10},
+    { "name": "화염방사", "power": 90, "type": "Fire", "accuracy" : 90, "category": "Special", "effect": "BRN", "chance": 10},
     { "name": "지진", "power": 100, "type": "Ground" , "accuracy": 100, "category": "Physical"},
-    { "name": "맹독", "power": 0, "type": "Poison" , "accuracy": 90, "category": "Status"},
+    { "name": "맹독", "power": 0, "type": "Poison" , "accuracy": 90, "category": "Status", "effect": "PSN", "chance": 100},
     { "name": "칼춤", "power": 0, "type": "Normal" , "accuracy": null, "category": "Status"}
   ]
 }

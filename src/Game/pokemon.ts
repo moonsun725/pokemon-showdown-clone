@@ -1,9 +1,11 @@
 import data_M from '../Data/moves.json' with { type: 'json' };
 import data_P from '../Data/pokedex.json' with { type: 'json' };
+
 import getTypeEffectiveness from '../BattleSystem/typeChart.js';
 import type { Rank } from '../BattleSystem/Rank.js';
 import { RankToMultiplier, RankToMultiplierAccEv, RankToMultiplierCrit } from '../BattleSystem/Rank.js';
 import { calculateDamage } from '../BattleSystem/dmgCalc.js';
+import { ApplyEffect } from '../BattleSystem/moveAbility.js';
 
 // 1. 기술 인터페이스 정의 (C++의 struct 역할)
 export interface Move {
@@ -11,7 +13,13 @@ export interface Move {
     power: number;
     type: string;
     accuracy: number | null; // 명중률 추가 (null은 명중률이 없는 기술)
-    category: string; // 물리, 특수, 상태 구분(현재 사용 x)
+    category: string; // 물리, 특수, 변화 상태 구분
+
+    // TS 문법: 물음표
+    // JSON에 이 값이 있으면 string/number가 들어오고,
+    // 아예 안 적혀 있으면 자동으로 'undefined'가 됩니다.
+    effect?: string; 
+    chance?: number;
 }
 
 export class Pokemon {
@@ -26,6 +34,8 @@ export class Pokemon {
     public speed: number;
     // 26-01-15. 타입 항목 추가
     public types: string[] = [];
+    //26-01-17. 상태이상 추가
+    public status: string | null = null; // 'PAR', 'BRN', 'PSN' 등
 
     public Rank: Rank = {
         atk: 0, 
@@ -87,6 +97,10 @@ export class Pokemon {
         if (move.category === 'Status') {
             console.log(`(변화기 발동 로직이 들어갈 곳)`);
             // 여기서 return 하거나, 아래 데미지 로직을 else로 감싸야 함
+            if (move.effect && move.chance) {
+                console.log("부가효과 있음!");
+                ApplyEffect(move.effect, move.chance, target);
+            }   
             return; 
         }
 
@@ -100,6 +114,11 @@ export class Pokemon {
 
         // 피해 적용
         target.takeDamage(DMGRes.damage);
+
+        if (move.effect && move.chance) {
+            console.log("부가효과 있음!");
+            ApplyEffect(move.effect, move.chance, target);
+        }   
         return;
     }
 
