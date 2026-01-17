@@ -2,6 +2,7 @@
 import { Server } from 'socket.io';
 import { Pokemon, createPokemon,} from './pokemon.js';
 import type { Move } from './pokemon.js';
+import { ResolveStatusEffects } from '../BattleSystem/StatusSystem.js';
 
 export class GameRoom {
     public roomId: string;
@@ -119,6 +120,8 @@ export class GameRoom {
 
         // --- Phase 3: 턴 종료 및 상태 업데이트 ---
         // 선택 초기화
+        ResolveStatusEffects(this.p1);
+        ResolveStatusEffects(this.p2);
         this.p1MoveIndex = null;
         this.p2MoveIndex = null;
 

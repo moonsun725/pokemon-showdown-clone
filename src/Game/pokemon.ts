@@ -67,29 +67,29 @@ export class Pokemon {
         console.log(`이름: ${this.name}, 체력: ${this.hp}, 공격 종족값: ${this.atk}`);
         this.moves.forEach(element => {
             if (element == null){
-                throw new Error('더 이상 배운 기술이 없습니다!');
+                throw new Error('[pokemon]:더 이상 배운 기술이 없습니다!');
             }
-            console.log("기술명:", element.name, "공격 타입:", element.type, "기술 위력:", element.power);
+            console.log("[pokemon]: 기술명:", element.name, "공격 타입:", element.type, "기술 위력:", element.power);
         });
     }
 
     // 기술 배우기 메서드
     learnMove(move: Move): void {
         this.moves.push(move);
-        console.log(`${this.name}이(가) [${move.name}]을(를) 배웠다!`);
+        console.log(`[pokemon]: ${this.name}이(가) [${move.name}]을(를) 배웠다!`);
     }
 
     // 특정 기술로 공격하기
     useMove(moveIndex: number, target: Pokemon,): void {
         const move = this.moves[moveIndex];
         if (!move) {
-            console.log("잘못된 기술 선택입니다.");
+            console.log("[pokemon]: 잘못된 기술 선택입니다.");
             return;
         }
 
         console.log(`[Battle] ${this.name}의 ${move.name} 공격!`);
         if (!this.CheckAcuracy(move, target)) {
-            console.log(`상대 ${target.name}에게는 맞지 않았다!`);
+            console.log(`[pokemon]: 상대 ${target.name}에게는 맞지 않았다!`);
             return;
         }
 
@@ -98,7 +98,7 @@ export class Pokemon {
             console.log(`(변화기 발동 로직이 들어갈 곳)`);
             // 여기서 return 하거나, 아래 데미지 로직을 else로 감싸야 함
             if (move.effect && move.chance) {
-                console.log("부가효과 있음!");
+                console.log("[pokemon]:부가효과 있음!");
                 ApplyEffect(move.effect, move.chance, target);
             }   
             return; 
@@ -114,9 +114,10 @@ export class Pokemon {
 
         // 피해 적용
         target.takeDamage(DMGRes.damage);
+        console.log(`[pokemon]:💥 ${target.name}은(는) ${DMGRes.damage}의 피해를 입었다! 남은 HP: ${target.hp}/${target.maxHp}`);
 
         if (move.effect && move.chance) {
-            console.log("부가효과 있음!");
+            console.log("[pokemon]: 부가효과 있음!");
             ApplyEffect(move.effect, move.chance, target);
         }   
         return;
@@ -128,12 +129,12 @@ export class Pokemon {
         // 작성하신 clamp 로직을 여기에 적용 (이미 잘 짜셨습니다!)
         this.Rank[stat] = Math.max(-6, Math.min(6, this.Rank[stat]));
         
-        console.log(`${this.name}의 ${stat} 랭크가 ${this.Rank[stat]}이 되었다!`);
+        console.log(`[pokemon]: ${this.name}의 ${stat} 랭크가 ${this.Rank[stat]}이 되었다!`);
     }
 
     takeDamage(amount: number): void {
         this.hp -= amount;
-        console.log(`${this.name}의 남은 HP: ${this.hp}`);
+        console.log(`[pokemon]: ${this.name}의 남은 HP: ${this.hp}`);
     }
 
     CheckAcuracy(move: Move, target: Pokemon): boolean {
