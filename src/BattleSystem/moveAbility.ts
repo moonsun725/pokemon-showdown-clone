@@ -19,18 +19,27 @@ const AbilityRegistry: { [scriptName: string]: MoveAbility } = {
     "paralysis": {
         OnHit: (target: Pokemon) => {
             console.log("⚡ 기술 효과: 마비 시도 중...");
+            if(target.types.includes("Electric")) {
+                return;
+            }
             TryApplyStatus(target, "PAR"); 
         }
     },
     "burn": {
         OnHit: (target: Pokemon) => {
             console.log("🔥 기술 효과: 화상 시도 중...");
+            if(target.types.includes("Fire")) {
+                return;
+            }
             TryApplyStatus(target, "BRN");
         }
     },
     "poison": {
         OnHit: (target: Pokemon) => {
             console.log("☠️ 기술 효과: 독 시도 중...");
+            if(target.types.includes("Poison") || target.types.includes("Steel")) {
+                return;
+            }
             TryApplyStatus(target, "PSN");
         }
     },

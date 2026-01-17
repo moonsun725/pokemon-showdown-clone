@@ -7,7 +7,7 @@ export function TryApplyStatus(target: Pokemon, statusTag: string): boolean {
     
     // 1. 이미 상태이상이 있으면 실패
     if (target.status !== null) {
-        // console.log("이미 상태이상이 있어 실패");
+        console.log("그러나 실패하고 말았다!");
         return false;
     }
 
