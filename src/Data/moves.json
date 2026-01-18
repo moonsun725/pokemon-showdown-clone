@@ -8,13 +8,13 @@
       "name": "전광석화", "power": 40, "type": "Normal", "accuracy": 100, "category": "Physical", "priority": 1},
     { "name": "칼춤", "power": null, "type": "Normal" , "accuracy": null, "category": "Status", "effect": "StatChange", 
       "data": { 
-        "changes": [ { "stat": "Attack", "value": 2 } ]
+        "selfChanges": [ { "stat": "Attack", "value": 2 } ]
       }
     },
     { "name": "껍질깨기", "power": null, "type": "Normal", "accuracy": null, "category": "Status", "effect": "StatChange",
       "data": {
-        "targetSelf": true,
-        "changes": [
+        
+        "selfChanges": [
           { "stat": "atk", "value": 2 },
           { "stat": "spa", "value": 2 },
           { "stat": "spe", "value": 2 },
@@ -25,7 +25,7 @@
     },
     { "name": "울음소리", "power":null, "type": "Normal", "accuracy": null, "category": "Status", "effect": "StatChange",
       "data": {
-        "changes": [{"stat": "atk", "value": -1}]
+        "targetChanges": [{"stat": "atk", "value": -1}]
       }
     }
   ]
