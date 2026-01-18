@@ -82,42 +82,61 @@ export class GameRoom {
         const move1 = this.p1.moves[this.p1MoveIndex!];
         const move2 = this.p2.moves[this.p2MoveIndex!];
 
-        if (!move1 || !move2) return; // 에러 방지 >< : p1, p2, move1, move2가 null일 경우 방어
+        if (!move1 || !move2) return; // 에러 방지 >< : p1, p2, move1, move2가 null일 경우 방지
 
         // 스피드 계산 로직
-        let first: { mon: any, move: any, target: any, role: string };
-        let second: { mon: any, move: any, target: any, role: string };
+        let first = this.p1;
+        let second = this.p2;
+        let firstMove = move1;
+        let secondMove = move2; // 일단은 초깃값을 둔다
 
-        // P1이 더 빠르거나, 스피드가 같으면 랜덤으로 P1 선공 (Speed Tie)
-        if (this.p1.speed > this.p2.speed || (this.p1.speed === this.p2.speed && Math.random() < 0.5)) {
-            first = { mon: this.p1, move: move1, target: this.p2, role: 'P1' };
-            second = { mon: this.p2, move: move2, target: this.p1, role: 'P2' };
-        } else {
-            first = { mon: this.p2, move: move2, target: this.p1, role: 'P2' };
-            second = { mon: this.p1, move: move1, target: this.p2, role: 'P1' };
+        // 우선도 먼저
+        const pri1 = move1.priority || 0; // OR연산: 좌측값이 null, undefined, false값이면 우측값 반환
+        const pri2 = move2.priority || 0;
+        let p1goesFirst = false;
+
+        if(pri1 > pri2)
+        {
+            p1goesFirst = true;
         }
+        else if (pri1 < pri2)
+        {
+            p1goesFirst = false;
+        }
+        else
+        {
+            if(first.speed > second.speed)
+                p1goesFirst = true;
+            else if (first.speed < second.speed)
+                p1goesFirst = false;
+            else 
+                p1goesFirst = Math.random() < 0.5; // random 함수는 0 <= x <1의 값을 반환 
+        }
+
+        if (!p1goesFirst)
+        {
+            first = this.p2; firstMove = move2;
+            second = this.p1; secondMove = move1;
+        }
+        // [Step A] 선공의 공격
+        first.useMove(first.moves.indexOf(firstMove), second);
         
-        // --- 선공 ---
-        io.to(this.roomId).emit('chat message', `💨 ${first.mon.name}이(가) 더 빠르다!`);
-        io.to(this.roomId).emit('chat message', `⚔️ ${first.mon.name}의 ${first.move.name}!`);
-        first.mon.useMove(first.mon.moves.indexOf(first.move), first.target);
-
-        if (first.target.hp <= 0) {
-            io.to(this.roomId).emit('chat message', `💀 ${first.target.name} 쓰러짐! ${first.role} 승리!`);
-            this.resetGame(io);
+        // 중간에 죽었는지 체크 (매우 중요!)
+        if (second.hp <= 0) {
+            console.log(`${second.name} 기절! ${first.name} 승리!`);
+            this.resetGame(io); // 게임 종료 처리
             return;
         }
 
-        // --- 후공 ---
-        io.to(this.roomId).emit('chat message', `⚔️ ${second.mon.name}의 ${second.move.name}!`);
-        second.mon.useMove(second.mon.moves.indexOf(second.move), second.target);
+        // [Step B] 후공의 공격
+        second.useMove(second.moves.indexOf(secondMove), first);
 
-        if (second.target.hp <= 0) {
-            io.to(this.roomId).emit('chat message', `💀 ${second.target.name} 쓰러짐! ${second.role} 승리!`);
+        // 죽었는지 체크
+        if (first.hp <= 0) {
+            console.log(`${first.name} 기절! ${second.name} 승리!`);
             this.resetGame(io);
             return;
         }
-
         // --- Phase 3: 턴 종료 및 상태 업데이트 ---
         // 선택 초기화
         ResolveStatusEffects(this.p1);
@@ -133,13 +152,13 @@ export class GameRoom {
 
         if (this.p1.hp <= 0)
         {
-            io.to(this.roomId).emit('chat message', `💀 ${first.target.name} 쓰러짐! ${first.role} 승리!`);
+            io.to(this.roomId).emit('chat message', `💀 ${this.p1} 쓰러짐! ${this.p2} 승리!`);
             this.resetGame(io);
             return;
         }
         if (this.p2.hp <= 0)
         {
-            io.to(this.roomId).emit('chat message', `💀 ${second.target.name} 쓰러짐! ${second.role} 승리!`);
+            io.to(this.roomId).emit('chat message', `💀 ${this.p2} 쓰러짐! ${this.p1} 승리!`);
             this.resetGame(io);
             return;
         }
