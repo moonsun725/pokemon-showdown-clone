@@ -43,33 +43,28 @@ const AbilityRegistry: { [key: string]: MoveAbility } = {
     "StatChange": {
         ...DefaultAbility,
 
-        // ① OnUse: 타겟이 '나(Self)'인 경우 (예: 칼춤, 명상)
+       // ① OnUse: 내 스탯 변화 (selfChanges가 있을 때만)
         OnUse: (user: Pokemon, move: Move) => {
             const d = move.data;
-            // 데이터가 있고, 타겟이 'Self'일 때만 작동
-            if (d && d.targetSelf && d.changes) {
-                console.log(`💪 [OnUse] ${user.name}의 버프 기술 발동!`);
-                
-                // 정의된 모든 변화(changes) 적용
-                d.changes.forEach(change => {
-                    // @ts-ignore (modifyRank 메서드가 Pokemon에 있다고 가정)
-                    user.modifyRank(change.stat, change.value);
-                    console.log(`   └ ${change.stat} ${change.value > 0 ? '+' : ''}${change.value} 랭크`);
+            if (d && d.selfChanges) {
+                console.log(`💪 [OnUse] ${user.name}의 스탯 변화!`);
+                d.selfChanges.forEach(c => {
+                    // @ts-ignore
+                    user.modifyRank(c.stat, c.value);
+                    console.log(`   └ 사용자 ${c.stat} ${c.value}랭크`);
                 });
             }
         },
 
-        // ② OnHit: 타겟이 '적'인 경우 (예: 울음소리, 째려보기)
+        // ② OnHit: 적 스탯 변화 (targetChanges가 있을 때만)
         OnHit: (target: Pokemon, move: Move, user: Pokemon) => {
             const d = move.data;
-            // 데이터가 있고, 타겟이 'Self'가 아닐 때만 작동
-            if (d && !d.targetSelf && d.changes) {
-                console.log(`📉 [OnHit] ${user.name}가 ${target.name}의 능력을 변화시킴!`);
-                
-                d.changes.forEach(change => {
+            if (d && d.targetChanges) {
+                console.log(`📉 [OnHit] ${target.name}에게 디버프 적용!`);
+                d.targetChanges.forEach(c => {
                     // @ts-ignore
-                    target.modifyRank(change.stat, change.value);
-                    console.log(`   └ ${target.name}의 ${change.stat} ${change.value > 0 ? '+' : ''}${change.value} 랭크`);
+                    target.modifyRank(c.stat, c.value);
+                    console.log(`   └ 적 ${c.stat} ${c.value}랭크`);
                 });
             }
         }

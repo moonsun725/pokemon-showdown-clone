@@ -137,7 +137,8 @@ export class GameRoom {
             this.resetGame(io);
             return;
         }
-        // --- Phase 3: 턴 종료 및 상태 업데이트 ---
+
+        // --- 턴 종료 및 상태 업데이트 ---
         // 선택 초기화
         ResolveStatusEffects(this.p1);
         ResolveStatusEffects(this.p2);

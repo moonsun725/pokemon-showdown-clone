@@ -15,7 +15,7 @@ export interface Move {
     accuracy: number | null; // 명중률 추가 (null은 명중률이 없는 기술)
     category: string; // 물리, 특수, 변화 상태 구분
 
-    priority: number;
+    priority?: number;
     // TS 문법: 물음표
     // JSON에 이 값이 있으면 string/number가 들어오고,
     // 아예 안 적혀 있으면 자동으로 'undefined'가 됩니다.
@@ -23,9 +23,11 @@ export interface Move {
     chance?: number; 
 
     data?: {
-        changes?: { stat: string, value: number }[]; // ★ 여러 개를 담을 수 있는 배열 추가
+        // 1. 나에게 적용될 랭크 변화 (OnUse 시점)
+        selfChanges?: { stat: string, value: number }[]; 
 
-        targetSelf?: boolean;// 랭크 변화: 나한테 쓰는가?
+        // 2. 적에게 적용될 랭크 변화 (OnHit 시점)
+        targetChanges?: { stat: string, value: number }[]; // ★ 여러 개를 담을 수 있는 배열 추가
         // recoil?: number;  // 나중에 추가될 반동 데미지 비율
         // drain?: number;   // 나중에 추가될 흡수 비율
     };
@@ -67,7 +69,7 @@ export class Pokemon {
         this.types = types; 
         for(var i = 0; i<4; i++)
         {
-            this.learnMove(data_M.moves[i]!);
+            this.learnMove(data_M.moves[i] as unknown as Move);
         }
     }
 
