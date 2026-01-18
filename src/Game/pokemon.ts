@@ -15,11 +15,20 @@ export interface Move {
     accuracy: number | null; // 명중률 추가 (null은 명중률이 없는 기술)
     category: string; // 물리, 특수, 변화 상태 구분
 
+    priority: number;
     // TS 문법: 물음표
     // JSON에 이 값이 있으면 string/number가 들어오고,
     // 아예 안 적혀 있으면 자동으로 'undefined'가 됩니다.
-    effect?: string; 
-    chance?: number;
+    effect?: string;  // Statchange, burn, paralysis, Recoil 등
+    chance?: number; 
+
+    data?: {
+        changes?: { stat: string, value: number }[]; // ★ 여러 개를 담을 수 있는 배열 추가
+
+        targetSelf?: boolean;// 랭크 변화: 나한테 쓰는가?
+        // recoil?: number;  // 나중에 추가될 반동 데미지 비율
+        // drain?: number;   // 나중에 추가될 흡수 비율
+    };
 }
 
 export class Pokemon {
@@ -87,6 +96,9 @@ export class Pokemon {
             return;
         }
 
+        // 기술 사용만 해도 발동하도록(ex: 칼춤)
+        ApplyEffect(move, target, this, 'OnUse');
+
         console.log(`[Battle] ${this.name}의 ${move.name} 공격!`);
         if (!this.CheckAcuracy(move, target)) {
             console.log(`[pokemon]: 상대 ${target.name}에게는 맞지 않았다!`);
@@ -97,9 +109,11 @@ export class Pokemon {
         if (move.category === 'Status') {
             console.log(`(변화기 발동 로직이 들어갈 곳)`);
             // 여기서 return 하거나, 아래 데미지 로직을 else로 감싸야 함
+
             if (move.effect && move.chance) {
                 console.log("[pokemon]:부가효과 있음!");
-                ApplyEffect(move.effect, move.chance, target);
+                // 적에게 부가효과 적용
+                ApplyEffect(move, target, this, 'OnHit');
             }   
             return; 
         }
@@ -118,7 +132,7 @@ export class Pokemon {
 
         if (move.effect && move.chance) {
             console.log("[pokemon]: 부가효과 있음!");
-            ApplyEffect(move.effect, move.chance, target);
+            ApplyEffect(move, target, this, 'OnHit');
         }   
         return;
     }
@@ -151,16 +165,6 @@ export class Pokemon {
     }
 }
 
-// 2025-12-31
-/*
-// --- 실행부 ---
-const pikachu = new Pokemon("피카츄", 100, 20);
-const thunderbolt: Move = { name: "10만볼트", power: 90, type: "ELECTRIC" };
-
-pikachu.learnMove(thunderbolt);
-pikachu.useMove(0, pikachu); // 자기 자신 테스트 혹은 다른 객체 생성
-*/
-
 // 2026-01-06
 // 데이터를 기반으로 포켓몬 생성 (C++의 팩토리 패턴과 유사)
 export function createPokemon(name: string): Pokemon {
@@ -174,25 +178,3 @@ export function createPokemon(name: string): Pokemon {
     // 2. 찾은 데이터로 객체 생성 및 반환
     return new Pokemon(pData.name, pData.hp, pData.atk, pData.speed, pData.type);
 }
-
-
-// 테스트용 코드
-/*
-try {
-    const myPika = createPokemon("피카츄");
-    const enemyChari = createPokemon("파이리");
-
-    console.log(`배틀 시작: ${myPika.name} vs ${enemyChari.name}`);
-    
-    // 기술 데이터도 JSON에서 가져와 배우게 할 수 있습니다.
-    
-    const thunderMove = data.moves[0]!; // >< 예외처리 안 하겠다 선언(프로토타이핑)
-    myPika.learnMove(thunderMove);
-    myPika.showCurrent();
-    enemyChari.showCurrent();
-
-    myPika.useMove(0, enemyChari);
-} catch (e) {
-    console.error(e);
-}
-    */

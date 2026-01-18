@@ -1,76 +1,105 @@
-// BattleSystem/moveAbilities.ts
 import { Pokemon } from '../Game/pokemon.js';
-import { TryApplyStatus } from './StatusSystem.js'; // ★ 분리된 로직 호출
+import type { Move } from '../Game/pokemon.js';
+import { TryApplyStatus } from './StatusSystem.js';
 
-// 인터페이스 유지
+// 트리거 타입 정의: 언제 호출되었는가?
+export type EffectTrigger = 'OnUse' | 'OnHit';
+
+// 인터페이스 정의
 export interface MoveAbility {
-    OnHit(target: Pokemon): void;
-    // OnUse, OnEndMove 등은 필요할 때 구현
+    // 기술을 시전하자마자 발동 (주로 사용자 대상, 명중 여부 무관)
+    OnUse(user: Pokemon, move: Move): void;
+    
+    // 기술이 명중했을 때 발동 (주로 피격자 대상)
+    OnHit(target: Pokemon, move: Move, user: Pokemon): void;
 }
 
-// =========================================================
-// 레지스트리 (Registry)
-// 기술의 효과(Effect)가 실제로 하는 일을 정의
-// =========================================================
-const AbilityRegistry: { [scriptName: string]: MoveAbility } = {
-    
-    // 1. 상태이상 계열 (Status Effects)
-    // 직접 status = "PAR" 하지 않고, 매니저에게 위임함
-    "paralysis": {
-        OnHit: (target: Pokemon) => {
-            console.log("⚡ 기술 효과: 마비 시도 중...");
-            if(target.types.includes("Electric")) {
-                return;
-            }
-            TryApplyStatus(target, "PAR"); 
-        }
-    },
-    "burn": {
-        OnHit: (target: Pokemon) => {
-            console.log("🔥 기술 효과: 화상 시도 중...");
-            if(target.types.includes("Fire")) {
-                return;
-            }
-            TryApplyStatus(target, "BRN");
-        }
-    },
-    "poison": {
-        OnHit: (target: Pokemon) => {
-            console.log("☠️ 기술 효과: 독 시도 중...");
-            if(target.types.includes("Poison") || target.types.includes("Steel")) {
-                return;
-            }
-            TryApplyStatus(target, "PSN");
-        }
-    },
-
-    // 2. 나중에 생길 비-상태이상 계열 (Non-Status Effects)
-    // 예: 랭크 다운, 반동 데미지 등은 여기서 직접 처리하거나 StatSystem 호출
-    /*
-    "lower_defense": {
-        OnHit: (target: Pokemon) => {
-            target.modifyRank("def", -1);
-        }
-    }
-    */
+// 기본값 (Null Object Pattern) - 구현하지 않은 메서드는 아무 일도 안 함
+const DefaultAbility: MoveAbility = {
+    OnUse: () => {},
+    OnHit: () => {}
 };
 
 // =========================================================
-// 메인 실행 함수
+// 레지스트리 (Registry)
+// 기술의 effect(문자열)와 실제 로직을 매핑
 // =========================================================
-export function ApplyEffect(scriptKey: string, chance: number, target: Pokemon): void {
-    
-    // 1. 확률 체크 (Move의 영역)
-    const random = Math.random() * 100;
-    if (random > chance) return;
+const AbilityRegistry: { [key: string]: MoveAbility } = {
 
-    // 2. 레지스트리에서 스크립트 실행
-    const ability = AbilityRegistry[scriptKey];
-    if (ability) {
-        ability.OnHit(target);
+    // 1. 상태이상 계열 (Status Effects)
+    // OnHit 타이밍에 StatusSystem을 호출하여 상태 부여 시도
+    "PAR": { ...DefaultAbility, OnHit: (t) => { 
+        if(t.types.includes("Electric")) return;
+        TryApplyStatus(t, "PAR"); } },
+    "BRN": { ...DefaultAbility, OnHit: (t) => { 
+        if(t.types.includes("Fire")) return; 
+        TryApplyStatus(t, "BRN"); } },
+    "PSN": { ...DefaultAbility, OnHit: (t) => { 
+        if(t.types.includes("Poison") || t.types.includes("Steel")) return;
+        TryApplyStatus(t, "PSN"); } },
+
+    // 2. 랭크 변화 (Stat Change)
+    // OnUse(내 버프)와 OnHit(상대 디버프)를 모두 처리하는 범용 로직
+    "StatChange": {
+        ...DefaultAbility,
+
+        // ① OnUse: 타겟이 '나(Self)'인 경우 (예: 칼춤, 명상)
+        OnUse: (user: Pokemon, move: Move) => {
+            const d = move.data;
+            // 데이터가 있고, 타겟이 'Self'일 때만 작동
+            if (d && d.targetSelf && d.changes) {
+                console.log(`💪 [OnUse] ${user.name}의 버프 기술 발동!`);
+                
+                // 정의된 모든 변화(changes) 적용
+                d.changes.forEach(change => {
+                    // @ts-ignore (modifyRank 메서드가 Pokemon에 있다고 가정)
+                    user.modifyRank(change.stat, change.value);
+                    console.log(`   └ ${change.stat} ${change.value > 0 ? '+' : ''}${change.value} 랭크`);
+                });
+            }
+        },
+
+        // ② OnHit: 타겟이 '적'인 경우 (예: 울음소리, 째려보기)
+        OnHit: (target: Pokemon, move: Move, user: Pokemon) => {
+            const d = move.data;
+            // 데이터가 있고, 타겟이 'Self'가 아닐 때만 작동
+            if (d && !d.targetSelf && d.changes) {
+                console.log(`📉 [OnHit] ${user.name}가 ${target.name}의 능력을 변화시킴!`);
+                
+                d.changes.forEach(change => {
+                    // @ts-ignore
+                    target.modifyRank(change.stat, change.value);
+                    console.log(`   └ ${target.name}의 ${change.stat} ${change.value > 0 ? '+' : ''}${change.value} 랭크`);
+                });
+            }
+        }
+    }
+};
+
+// =========================================================
+// 메인 실행 함수 (Dispatcher)
+// =========================================================
+export function ApplyEffect(move: Move, target: Pokemon, user: Pokemon, trigger: EffectTrigger): void {
+    
+    // 1. 기술에 효과(effect)가 정의되어 있는지 확인
+    if (!move.effect) return;
+
+    // 2. 확률 체크 (OnUse는 보통 100%지만, 데이터에 chance가 있다면 반영)
+    // chance가 undefined면 100%로 간주
+    const chance = move.chance ?? 100;
+    if (Math.random() * 100 > chance) return;
+
+    // 3. 레지스트리에서 해당 효과의 로직 가져오기
+    const logic = AbilityRegistry[move.effect];
+
+    if (logic) {
+        // 4. Trigger(타이밍)에 맞는 메서드 실행
+        if (trigger === 'OnUse') {
+            logic.OnUse(user, move);
+        } else if (trigger === 'OnHit') {
+            logic.OnHit(target, move, user);
+        }
     } else {
-        // 만약 레지스트리에 없는데 scriptKey가 "PAR" 같은 상태 태그라면
-        // 바로 StatusSystem으로 넘겨버리는 숏컷을 만들 수도 있음 (선택사항)
-        console.warn(`[MoveAbility] 구현되지 않은 스크립트: ${scriptKey}`);
+        console.warn(`⚠️ [MoveAbility] 구현되지 않은 효과 스크립트: ${move.effect}`);
     }
 }

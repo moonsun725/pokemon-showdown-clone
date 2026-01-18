@@ -97,7 +97,7 @@ export class GameRoom {
             second = { mon: this.p1, move: move1, target: this.p2, role: 'P1' };
         }
         
-            // --- 선공 ---
+        // --- 선공 ---
         io.to(this.roomId).emit('chat message', `💨 ${first.mon.name}이(가) 더 빠르다!`);
         io.to(this.roomId).emit('chat message', `⚔️ ${first.mon.name}의 ${first.move.name}!`);
         first.mon.useMove(first.mon.moves.indexOf(first.move), first.target);
@@ -130,6 +130,20 @@ export class GameRoom {
             p1: { name: this.p1.name, hp: this.p1.hp, maxHp: this.p1.maxHp, moves: this.p1.moves },
             p2: { name: this.p2.name, hp: this.p2.hp, maxHp: this.p2.maxHp, moves: this.p2.moves }
         });
+
+        if (this.p1.hp <= 0)
+        {
+            io.to(this.roomId).emit('chat message', `💀 ${first.target.name} 쓰러짐! ${first.role} 승리!`);
+            this.resetGame(io);
+            return;
+        }
+        if (this.p2.hp <= 0)
+        {
+            io.to(this.roomId).emit('chat message', `💀 ${second.target.name} 쓰러짐! ${second.role} 승리!`);
+            this.resetGame(io);
+            return;
+        }
+
         
         // 클라이언트들에게 "다음 턴 시작해" 신호 (버튼 활성화)
         io.to(this.roomId).emit('turn_start');
