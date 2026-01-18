@@ -67,10 +67,13 @@ export class Pokemon {
         this.atk = atk;
         this.speed = speed || 10; // 기본값 처리
         this.types = types; 
-        for(var i = 0; i<4; i++)
-        {
-            this.learnMove(data_M.moves[i] as unknown as Move);
-        }
+        
+        this.learnMove(data_M.moves[0] as unknown as Move); // 10만볼트(기준확인)
+        this.learnMove(data_M.moves[3] as unknown as Move); // 맹독
+        this.learnMove(data_M.moves[4] as unknown as Move); // 전광석화
+        this.learnMove(data_M.moves[5] as unknown as Move); // 칼춤
+
+        
     }
 
     // 상태 확인 메서드
@@ -111,11 +114,11 @@ export class Pokemon {
         if (move.category === 'Status') {
             console.log(`(변화기 발동 로직이 들어갈 곳)`);
             // 여기서 return 하거나, 아래 데미지 로직을 else로 감싸야 함
-
             if (move.effect && move.chance) {
                 console.log("[pokemon]:부가효과 있음!");
                 // 적에게 부가효과 적용
                 ApplyEffect(move, target, this, 'OnHit');
+
             }   
             return; 
         }

@@ -3,12 +3,12 @@
     { "name": "10만볼트", "power": 90, "type": "Electric", "accuracy": 100, "category": "Special", "effect": "paralysis", "chance": 10},
     { "name": "화염방사", "power": 90, "type": "Fire", "accuracy" : 90, "category": "Special", "effect": "burn", "chance": 10},
     { "name": "지진", "power": 100, "type": "Ground" , "accuracy": 100, "category": "Physical"},
-    { "name": "맹독", "power": null, "type": "Poison" , "accuracy": 90, "category": "Status", "effect": "poison", "chance": 100},
+    { "name": "맹독", "power": null, "type": "Poison" , "accuracy": 90, "category": "Status", "effect": "PSN", "chance": 100},
     { 
       "name": "전광석화", "power": 40, "type": "Normal", "accuracy": 100, "category": "Physical", "priority": 1},
     { "name": "칼춤", "power": null, "type": "Normal" , "accuracy": null, "category": "Status", "effect": "StatChange", 
       "data": { 
-        "selfChanges": [ { "stat": "Attack", "value": 2 } ]
+        "selfChanges": [ { "stat": "atk", "value": 2 } ]
       }
     },
     { "name": "껍질깨기", "power": null, "type": "Normal", "accuracy": null, "category": "Status", "effect": "StatChange",

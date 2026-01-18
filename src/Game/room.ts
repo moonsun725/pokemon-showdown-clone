@@ -153,13 +153,13 @@ export class GameRoom {
 
         if (this.p1.hp <= 0)
         {
-            io.to(this.roomId).emit('chat message', `💀 ${this.p1} 쓰러짐! ${this.p2} 승리!`);
+            io.to(this.roomId).emit('chat message', `💀 ${this.p1.name} 쓰러짐! ${this.p2.name} 승리!`);
             this.resetGame(io);
             return;
         }
         if (this.p2.hp <= 0)
         {
-            io.to(this.roomId).emit('chat message', `💀 ${this.p2} 쓰러짐! ${this.p1} 승리!`);
+            io.to(this.roomId).emit('chat message', `💀 ${this.p2.name} 쓰러짐! ${this.p1.name} 승리!`);
             this.resetGame(io);
             return;
         }
@@ -176,7 +176,30 @@ export class GameRoom {
         this.p2.hp = this.p2.maxHp;
         this.p1MoveIndex = null;
         this.p2MoveIndex = null;
+        this.p1.Rank = {
+            atk: 0, 
+            def: 0, 
+            spd: 0,
+            satk: 0,
+            sdef: 0,
+            acc: 0,
+            eva: 0,
+            crit: 0
+        }
+        this.p2.Rank = {
+            atk: 0, 
+            def: 0, 
+            spd: 0,
+            satk: 0,
+            sdef: 0,
+            acc: 0,
+            eva: 0,
+            crit: 0
+        }
         
+        this.p1.status = null;
+        this.p2.status = null;
+
         io.to(this.roomId).emit('chat message', `🔄 게임이 재시작되었습니다.`);
         io.to(this.roomId).emit('update_ui', { 
             p1: { name: this.p1.name, hp: this.p1.hp, maxHp: this.p1.maxHp, moves: this.p1.moves },
