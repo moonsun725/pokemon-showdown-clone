@@ -11,6 +11,7 @@ export class GameRoom {
     // 게임 상태 변수들 (server.ts의 전역 변수들이 멤버 변수가 됨)
 // ... class Room ...
     p1: Player | null = null; // 이거 자세한 의미좀 알고 가야겠어
+    // >< 의미: "p1 변수는 Player 객체일 수도 있고, 아무도 안 들어와서 null일 수도 있다. 그리고 시작할 때는 null이다."
     p2: Player | null = null;
     public players: { [socketId: string]: 'p1' | 'p2' } = {}; // 소켓ID -> 역할 매핑
     
@@ -20,18 +21,21 @@ export class GameRoom {
     constructor(id: string) {
         this.roomId = id;
     }
-    entry : Pokemon[] = [createPokemon("피카츄"), createPokemon("이상해씨")]; // 당장은 더미로 만들어
+    // entry : Pokemon[] = [createPokemon("피카츄"), createPokemon("이상해씨")]; // 당장은 더미로 만들어
+    // >< 이렇게 만들면 레퍼런스 복사라 플레이어별로 따로 만들어줘야 함
 
     // 유저 입장 처리
-    join(socketId: string): 'p1' | 'p2' | 'spectator'  // 여기 : 'p1' | 'p2' | 'spectator' 의미도 궁금해
+    join(socketId: string): 'p1' | 'p2' | 'spectator'  // 여기 : 'p1' | 'p2' | 'spectator' 의미도 궁금해 >< 저렇게 적으면 오직 저 3가지 글자 중 하나만 반환한다고 보장 (오타 방지에 탁월)
     {
         if (!this.p1) {
-            this.p1 = new Player(socketId, this.entry)
+            const newParty = [createPokemon("피카츄"), createPokemon("이상해씨")];
+            this.p1 = new Player(socketId, newParty)
             this.p1.activePokemon = this.p1.party[0]!; // >< 여기도 일단 느낌표처리
             this.players[socketId] = 'p1';
             return 'p1';
         } else if (!this.p2) {
-            this.p2 = new Player(socketId, this.entry)
+            const newParty2  = [createPokemon("피카츄"), createPokemon("이상해씨")];
+            this.p2 = new Player(socketId, newParty2)
             this.p2.activePokemon = this.p2.party[1]!; // 어쨋든 피카츄 대 이상해씨로 결과는 같다
             this.players[socketId] = 'p2';
             return 'p2';
@@ -185,7 +189,7 @@ export class GameRoom {
         let poke2 = this.p2.activePokemon;
 
         poke1.hp = poke1.maxHp;
-        poke2.hp = poke1.maxHp;
+        poke2.hp = poke2.maxHp;
 
         this.p1MoveIndex = null;
         this.p2MoveIndex = null;
