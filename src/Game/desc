@@ -1,5 +1,6 @@
 서버 실행하기
 * npx tsx src/server.ts 
+* npx tsx pokemon-showdown-clone/src/server.ts
 파일 경로를 정확하게 적어줘야 함 ㅇㅇ
 
 ctrl + c 로 서버 종료 가능

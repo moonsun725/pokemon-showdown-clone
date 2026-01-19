@@ -168,6 +168,20 @@ export class Pokemon {
         }
         
     }
+
+    ResetCondition(): void {
+        // (1) 체력 회복
+        this.hp = this.maxHp;
+                
+        // (2) 상태이상 제거
+        this.status = null;
+                    
+        // (3) 랭크 초기화 (새 객체 할당이 가장 깔끔함)
+        this.Rank = {
+            atk: 0, def: 0, spd: 0, satk: 0, sdef: 0,
+            acc: 0, eva: 0, crit: 0 // pokemon.Rank.atk = 0; 이런식으로 해도 되긴하네
+        }
+    }
 }
 
 // 2026-01-06

@@ -5,18 +5,28 @@ import { Pokemon, createPokemon,} from './pokemon.js';
 import type { Move } from './pokemon.js';
 import { ResolveStatusEffects } from '../BattleSystem/StatusSystem.js';
 
+// 행동의 종류: 기술(move) or 교체(switch)
+export type ActionType = 'move' | 'switch';
+
+// 행동 데이터 구조체
+export interface BattleAction {
+    type: ActionType;
+    index: number; // 기술 번호(0~3) 혹은 파티 번호(0~5)
+}
+
 export class GameRoom {
     public roomId: string;
     
     // 게임 상태 변수들 (server.ts의 전역 변수들이 멤버 변수가 됨)
-// ... class Room ...
+    
+    // 플레이어 객체 / 포켓몬 객체 생성
     p1: Player | null = null; // 이거 자세한 의미좀 알고 가야겠어
     // >< 의미: "p1 변수는 Player 객체일 수도 있고, 아무도 안 들어와서 null일 수도 있다. 그리고 시작할 때는 null이다."
     p2: Player | null = null;
     public players: { [socketId: string]: 'p1' | 'p2' } = {}; // 소켓ID -> 역할 매핑
     
-    private p1MoveIndex: number | null = null; // 이거 인덱스는 p1의 엔트리 멤버가 돌려쓸거니까 크게 상관있진 않음
-    private p2MoveIndex: number | null = null;
+    private p1Action: BattleAction | null = null;
+    private p2Action: BattleAction | null = null;
 
     constructor(id: string) {
         this.roomId = id;
@@ -52,176 +62,195 @@ export class GameRoom {
 
         if (role === 'p1') {
             this.p1 = null; // 자리 비우기 (객체 삭제)
-            this.p1MoveIndex = null; // 선택 정보 초기화
+            this.p1Action = null; // 선택 정보 초기화
             console.log(`[Room: ${this.roomId}] Player 1 퇴장. 자리가 비었습니다.`);
         } else if (role === 'p2') {
             this.p2 = null;
-            this.p2MoveIndex = null;
+            this.p2Action = null;
             console.log(`[Room: ${this.roomId}] Player 2 퇴장. 자리가 비었습니다.`);
         }
 
         return role; // 누가 나갔는지 반환 (로그용)
     }
 
-    // 공격 예약 처리
-    handleAttack(socketId: string, moveIndex: number, io: Server) {
-        const role = this.players[socketId];
-        if (!role) return;
+    // 행동 분할: 공격 and 교체
+    handleAction(socketId: string, action: BattleAction, io: Server) {
+    const role = this.players[socketId];
+    if (!role) return;
 
-        if (role === 'p1') this.p1MoveIndex = moveIndex;
-        if (role === 'p2') this.p2MoveIndex = moveIndex;
+    // 1. 행동 저장
+    if (role === 'p1') this.p1Action = action;
+    if (role === 'p2') this.p2Action = action;
 
-        // ★ 중요: 방 안에 있는 사람들에게만 전송 (io.to)
-        io.to(socketId).emit('move_locked'); // >< this.RoomId: 방 전체에 전송, io.to(socketId): 해당 소켓에만 전송
+    // 2. 입력 잠금 (나만)
+    io.to(socketId).emit('input_locked'); 
 
-        // 둘 다 선택했는지 확인
-        if (this.p1MoveIndex !== null && this.p2MoveIndex !== null) {
-            this.resolveTurn(io);
-        } else {
-            const waiter = role === 'p1' ? 'P1' : 'P2';
-            io.to(this.roomId).emit('chat message', `[시스템] ${waiter} 준비 완료!`);
-        }
+    // 3. 둘 다 행동을 선택했으면 턴 진행
+    if (this.p1Action && this.p2Action) {
+        this.resolveTurn(io);
+    } else {
+        const waiter = role === 'p1' ? 'P1' : 'P2';
+        io.to(this.roomId).emit('chat message', `[시스템] ${waiter} 준비 완료!`);
     }
+}
 
     // 턴 계산 로직 (기존 함수 이식)
     private resolveTurn(io: Server) {
         
         if (!this.p1 || !this.p2) return; // >< 안전장치
+        if (!this.p1Action || !this.p2Action) return;
         // (!this.p1.activePokemon || !this.p2.activePokemon) 이렇게쓰면 개체가 null이라고 오류남
 
-        // 기술 객체 가져오기 (p1MoveIndex가 null이 아님을 보장해야 함)
-        const move1 = this.p1.activePokemon.moves[this.p1MoveIndex!];
-        const move2 = this.p2.activePokemon.moves[this.p2MoveIndex!];
+        const p1 = this.p1; // 짧게 쓰고싶으니까
+        const p2 = this.p2;
+        const act1 = this.p1Action;
+        const act2 = this.p2Action;
 
-        if (!move1 || !move2) return; // 에러 방지 >< : p1, p2, move1, move2가 null일 경우 방지
-
-        let poke1 = this.p1.activePokemon;
-        let poke2 = this.p2.activePokemon;
-        // 스피드 계산 로직
-        let first = poke1;
-        let second = poke2;
-        let firstMove = move1;
-        let secondMove = move2; // 일단은 초깃값을 둔다
-
-        // 우선도 먼저
-        const pri1 = move1.priority || 0; // OR연산: 좌측값이 null, undefined, false값이면 우측값 반환
-        const pri2 = move2.priority || 0;
-        let p1goesFirst = false;
-
-        if(pri1 > pri2)
-        {
-            p1goesFirst = true;
-        }
-        else if (pri1 < pri2)
-        {
-            p1goesFirst = false;
-        }
-        else
-        {
-            if(first.speed > second.speed)
-                p1goesFirst = true;
-            else if (first.speed < second.speed)
-                p1goesFirst = false;
-            else 
-                p1goesFirst = Math.random() < 0.5; // random 함수는 0 <= x <1의 값을 반환 
-        }
-
-        if (!p1goesFirst)
-        {
-            first = poke2; firstMove = move2;
-            second = poke1; secondMove = move1;
-        }
-        // [Step A] 선공의 공격
-        first.useMove(first.moves.indexOf(firstMove), second);
+        // ====================================================
+        // 1️⃣ [교체 페이즈] Switching Phase (우선도 최상)
+        // ====================================================
         
-        // 중간에 죽었는지 체크 (매우 중요!)
-        if (second.hp <= 0) {
-            console.log(`${second.name} 기절! ${first.name} 승리!`);
-            this.resetGame(io); // 게임 종료 처리
-            return;
+        // P1 교체 처리
+        if (act1.type === 'switch') {
+            const success = p1.switchPokemon(act1.index);
+            if (success) {
+                io.to(this.roomId).emit('chat message', `🔄 Player 1이 ${p1.activePokemon.name}(으)로 교체했다!`);
+            }
         }
 
-        // [Step B] 후공의 공격
-        second.useMove(second.moves.indexOf(secondMove), first);
-
-        // 죽었는지 체크
-        if (first.hp <= 0) {
-            console.log(`${first.name} 기절! ${second.name} 승리!`);
-            this.resetGame(io);
-            return;
+        // P2 교체 처리
+        if (act2.type === 'switch') {
+            const success = p2.switchPokemon(act2.index);
+            if (success) {
+                io.to(this.roomId).emit('chat message', `🔄 Player 2가 ${p2.activePokemon.name}(으)로 교체했다!`);
+            }
         }
 
-        // --- 턴 종료 및 상태 업데이트 ---
-        // 선택 초기화
-        ResolveStatusEffects(first); 
-        ResolveStatusEffects(second); // 당장은 행동 순서 기준으로 
-        this.p1MoveIndex = null;
-        this.p2MoveIndex = null;
+        // ====================================================
+        // 2️⃣ [공격 페이즈] Attacking Phase
+        // ====================================================
 
-        // 모든 클라이언트에게 최신 상태 전송 & 입력 잠금 해제
-        io.to(this.roomId).emit('update_ui', { 
-            p1: { name: poke1.name, hp: poke1.hp, maxHp: poke1.maxHp, moves: poke1.moves },
-            p2: { name: poke2.name, hp: poke2.hp, maxHp: poke2.maxHp, moves: poke2.moves }
+        // 둘 중 하나라도 공격을 선택했는지 확인
+        const p1Attacks = act1.type === 'move';
+        const p2Attacks = act2.type === 'move';
+
+        // 둘 다 교체했으면 공격 페이즈는 스킵됨
+        if (!p1Attacks && !p2Attacks) {
+            this.endTurn(io); // 턴 종료 처리로 직행
+            return;
+        }
+        let attackers: { player: any, moveIndex: number, speed: number, priority: number }[] = [];
+
+        if (p1Attacks) {
+            const move = p1.activePokemon.moves[act1.index];
+            if (move) {
+                attackers.push({ 
+                    player: p1, 
+                    moveIndex: act1.index, 
+                    speed: p1.activePokemon.speed, // (임시) 현재 스피드
+                    priority: move.priority || 0 
+                });
+            }
+        }
+
+        if (p2Attacks) {
+            const move = p2.activePokemon.moves[act2.index];
+            if (move) {
+                attackers.push({ 
+                    player: p2, 
+                    moveIndex: act2.index, 
+                    speed: p2.activePokemon.speed, 
+                    priority: move.priority || 0 
+                });
+            }
+        }
+
+            // 스피드/우선도 정렬 (내림차순)
+        attackers.sort((a, b) => {
+            if (a.priority !== b.priority) return b.priority - a.priority; // 우선도 먼저
+            if (a.speed !== b.speed) return b.speed - a.speed; // 스피드 다음
+            return Math.random() - 0.5; // 동속 랜덤
         });
 
-        if (poke1.hp <= 0)
-        {
-            io.to(this.roomId).emit('chat message', `💀 ${poke1.name} 쓰러짐! ${poke2.name} 승리!`);
-            this.resetGame(io);
-            return;
-        }
-        if (poke2.hp <= 0)
-        {
-            io.to(this.roomId).emit('chat message', `💀 ${poke2.name} 쓰러짐! ${poke1.name} 승리!`);
-            this.resetGame(io);
-            return;
+        // 정렬된 순서대로 공격 실행
+        for (const attacker of attackers) {
+            const user = attacker.player;
+            const enemy = (user === p1) ? p2 : p1; // 상대방 찾기
+            
+            // ★ 기절 체크: 내 턴이 오기 전에 맞아 죽었으면 공격 못함
+            if (user.activePokemon.hp <= 0) continue;
+
+            // 공격 실행
+            user.activePokemon.useMove(attacker.moveIndex, enemy.activePokemon);
+
+            // 공격 후 상대가 쓰러졌는지 체크 (게임 종료 로직)
+            if (enemy.activePokemon.hp <= 0) {
+                io.to(this.roomId).emit('chat message', `💀 ${enemy.activePokemon.name} 쓰러짐!`);
+                // 여기서 resetGame 혹은 '강제 교체' 페이즈로 넘어가야 함
+                this.resetGame(io); 
+                return;
+            }
         }
 
+        // ====================================================
+        // 3️⃣ [턴 종료 페이즈] End Phase
+        // ====================================================
+        this.endTurn(io);
+    }
+
+    // 턴 종료 시 공통 처리 (함수로 분리 추천)
+    private endTurn(io: Server) {
+        if (!this.p1 || !this.p2) return;
+
+        // 상태이상 데미지
+        ResolveStatusEffects(this.p1.activePokemon);
+        ResolveStatusEffects(this.p1.activePokemon); // (오타 주의: p2여야 함) -> ResolveStatusEffects(this.p2.activePokemon);
+
+        // 행동 초기화
+        this.p1Action = null;
+        this.p2Action = null;
+
+        // UI 업데이트 및 턴 시작 신호
+        this.broadcastState(io);
         
-        // 클라이언트들에게 "다음 턴 시작해" 신호 (버튼 활성화)
-        io.to(this.roomId).emit('turn_start');
+        // 혹시 상태이상 뎀으로 죽었는지 체크
+        if (this.p1.activePokemon.hp <= 0 || this.p2.activePokemon.hp <= 0) {
+            this.resetGame(io); // 임시 종료
+        } else {
+            io.to(this.roomId).emit('turn_start');
+        }
     }
     
     resetGame(io: Server) {
-    // 간단하게 체력만 원상복구
-        if (!this.p1 || !this.p2) return;
-        let poke1 = this.p1.activePokemon; // 이게 다 레퍼런스 복사라 가능한거다 이말이야
-        let poke2 = this.p2.activePokemon;
+        // 1. 공통 초기화 로직 (함수로 분리하여 중복 제거)
+        const resetPlayerTeam = (player: Player | null) => {
+            if (!player) return;
 
-        poke1.hp = poke1.maxHp;
-        poke2.hp = poke2.maxHp;
+            // ★ forEach 사용법
+            // player.party 배열의 모든 요소를 순회하며 'pokemon' 변수에 담아 실행
+            player.party.forEach((pokemon)=>{pokemon.ResetCondition()});
 
-        this.p1MoveIndex = null;
-        this.p2MoveIndex = null;
-        poke1.Rank = {
-            atk: 0, 
-            def: 0, 
-            spd: 0,
-            satk: 0,
-            sdef: 0,
-            acc: 0,
-            eva: 0,
-            crit: 0
-        }
-        poke2.Rank = {
-            atk: 0, 
-            def: 0, 
-            spd: 0,
-            satk: 0,
-            sdef: 0,
-            acc: 0,
-            eva: 0,
-            crit: 0
-        }
-        
-        poke1.status = null;
-        poke2.status = null;
+            // (4) 선봉 초기화 (다시 1번 타자로 설정)
+            // 게임이 리셋됐으니 다시 첫 번째 포켓몬이 나와야겠죠?
+            if (player.party.length > 0) {
+                player.activePokemon = player.party[0]!;
+            }};
 
-        io.to(this.roomId).emit('chat message', `🔄 게임이 재시작되었습니다.`);
-        io.to(this.roomId).emit('update_ui', { 
-            p1: { name: poke1.name, hp: poke1.hp, maxHp: poke1.maxHp, moves: poke1.moves },
-            p2: { name: poke2.name, hp: poke2.hp, maxHp: poke2.maxHp, moves: poke2.moves }
-        });
+        // 2. 양쪽 플레이어 팀 리셋
+        resetPlayerTeam(this.p1);
+        resetPlayerTeam(this.p2);
+
+        // 3. 행동 선택 정보 초기화
+        this.p1Action = null;
+        this.p2Action = null;
+
+        // 4. UI 업데이트 및 알림
+        io.to(this.roomId).emit('chat message', `🔄 게임이 재시작되었습니다. 모든 포켓몬이 회복되었습니다.`);
+            
+        // 정보 갱신 (이제 activePokemon이 0번으로 바뀌었으므로 갱신 필수)
+        this.broadcastState(io);
+            
+        // 턴 시작 신호
         io.to(this.roomId).emit('turn_start');
     }
 
@@ -232,8 +261,15 @@ export class GameRoom {
         let poke2 = this.p2.activePokemon;
 
         io.to(this.roomId).emit('update_ui', {
-            p1: { name: poke1.name, hp: poke1.hp, maxHp: poke1.maxHp, moves: poke1.moves },
-            p2: { name: poke2.name, hp: poke2.hp, maxHp: poke2.maxHp, moves: poke2.moves }
+            
+            p1: { 
+                active : poke1,
+                party : this.p1.party
+             },
+
+            p2: { active : poke2,
+                party : this.p2.party 
+            },
         });
     }
 }

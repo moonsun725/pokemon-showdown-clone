@@ -43,12 +43,24 @@
                 <div id="p2-name">?</div>
                 <div id="p2-hp">HP: ? / ?</div>
             </div>
+            
         </div>
 
         <div id="controls-area" style="margin: 20px 0; padding: 10px; border: 2px dashed #888;">
             <h4>기술 선택</h4>
             <div id="move-buttons" style="display: flex; gap: 10px;"></div>
+            <h4>교체</h4>
+            <div id="change-button" style="display: flex; gap: 10px;"></div>
+            <h4>선택 취소</h4>
+            <div id="discard-button" style="display: flex; gap: 10px;"></div>
         </div>
+
+        <div id="party-panel" style="display: none;">
+            <h4>교체할 포켓몬 선택</h4>
+            <div id="change-button" style="display: flex; gap: 10px; flex-wrap: wrap;"></div>
+            <button id="btn-cancel-switch" style="margin-top: 10px;">취소</button>
+        </div>
+        
 
         <hr>
         <h3>전투 로그</h3>
@@ -72,7 +84,15 @@
         const p2Name = document.getElementById('p2-name');
         const p2Hp = document.getElementById('p2-hp');
         const moveButtonsContainer = document.getElementById('move-buttons');
+        const switchButton = document.getElementById("change-button"); // 수정
+        const discardButton = document.getElementById("discard-button"); // 수정 2
         const messages = document.getElementById('messages');
+
+        const attackPanel = document.getElementById('attack-panel'); // 토글 UI
+        const partyPanel = document.getElementById('party-panel');
+        const btnShowAttack = document.getElementById('btn-show-attack');
+        const btnShowParty = document.getElementById('btn-show-party');
+        const btnCancelSwitch = document.getElementById('btn-cancel-switch');
 
         let myRole = ''; 
 
@@ -105,28 +125,36 @@
         });
 
          socket.on('update_ui', (data) => {
-            if (data.p1) {
-                p1Name.innerText = data.p1.name;
-                p1Hp.innerText = `HP: ${data.p1.hp} / ${data.p1.maxHp}`;
+            if (data.p1.active) {
+                p1Name.innerText = data.p1.active.name;
+                p1Hp.innerText = `HP: ${data.p1.active.hp} / ${data.p1.active.maxHp}`;
             }
-            if (data.p2) {
-                p2Name.innerText = data.p2.name;
-                p2Hp.innerText = `HP: ${data.p2.hp} / ${data.p2.maxHp}`;
+            if (data.p2.active) {
+                p2Name.innerText = data.p2.active.name;
+                p2Hp.innerText = `HP: ${data.p2.active.hp} / ${data.p2.active.maxHp}`;
             }
 
             moveButtonsContainer.innerHTML = ''; 
-
+            switchButton.innerHTML = '';
+            discardButton.innerHTML = '';
+            
             let myMoves = [];
-            if (myRole === 'p1' && data.p1) myMoves = data.p1.moves;
-            else if (myRole === 'p2' && data.p2) myMoves = data.p2.moves;
+            if (myRole === 'p1' && data.p1.active) myMoves = data.p1.active.moves;
+            else if (myRole === 'p2' && data.p2.active) myMoves = data.p2.active.moves;
             else {
                 if(myRole === '') moveButtonsContainer.innerText = "로딩 중...";
                 else moveButtonsContainer.innerText = "관전 중입니다.";
                 return;
             }
 
+            let myParty = [] // 이게 맞는지는 잘 모르겠다
+            if (myRole === 'p1' && data.p1.party) myParty = data.p1.party;
+            else if (myRole === 'p2' && data.p2.party) myParty = data.p2.party;
+            else return;
+            
+
             if (myMoves) {
-                myMoves.forEach((move, index) => {
+                myMoves.forEach((move, Moveindex) => {
                     const btn = document.createElement('button');
                     btn.innerText = `${move.name}\n(${move.power})`;
                     btn.style.padding = '10px';
@@ -134,10 +162,43 @@
                     btn.style.cursor = 'pointer';
 
                     btn.onclick = () => {
-                        socket.emit('attack', index);
+                        socket.emit('action', { type: 'move', index: Moveindex });
                     };
                     moveButtonsContainer.appendChild(btn);
                 });
+                const Chbtn = document.createElement('button');
+                Chbtn.innerText = `교체`;
+                Chbtn.style.padding = '10px';
+                Chbtn.style.marginRight = '5px';
+                Chbtn.style.cursor = 'pointer';
+                Chbtn.onclick = () => {
+                    if (myParty)
+                    {
+                        myParty.forEach((pokemon, entryindex) => {
+                            const Pokebtn = document.createElement('button');
+                            Pokebtn.innerText = `${pokemon.name}\n(${pokemon.hp}/${pokemon.maxHp})`;
+                            Pokebtn.style.padding = '10px';
+                            Pokebtn.style.marginRight = '5px';
+                            Pokebtn.style.cursor = 'pointer';
+                            Pokebtn.onclick = () => {
+                                socket.emit('action', { type: 'switch', index: entryindex });
+                            };
+                            switchButton.appendChild(Pokebtn);
+                        });
+                    }
+                };
+                switchButton.appendChild(Chbtn);
+
+                const Disbtn = document.createElement('button');
+                Disbtn.innerText = `교체`;
+                Disbtn.style.padding = '10px';
+                Disbtn.style.marginRight = '5px';
+                Disbtn.style.cursor = 'pointer';
+                Disbtn.onclick = () => {
+                        io.to(socketId).emit('move_discarded');
+                };
+                discardButton.appendChild(Disbtn);
+                Disbtn.disabled = true;
             }
         });
 
@@ -148,18 +209,52 @@
             window.scrollTo(0, document.body.scrollHeight);
         });
 
-        socket.on('move_locked', () => {
+        socket.on('input_locked', () => {
             const buttons = moveButtonsContainer.querySelectorAll('button'); // >< 버튼 활성화/비활성화 코드
             buttons.forEach(btn => btn.disabled = true);
+            Chbtn.disabled = true;
+            Disbtn.disabled = false;
             const li = document.createElement('li');
             li.style.color = "blue";
             li.textContent = "⏳ 입력 완료! 상대방 기다리는 중...";
             messages.appendChild(li);
         });
 
+        socket.on('move_discarded',() =>{
+            const buttons = moveButtonsContainer.querySelectorAll('button'); // >< 버튼 활성화/비활성화 코드
+            buttons.forEach(btn => btn.disabled = false);
+            Chbtn.disabled = false;
+            Disbtn.disabled = true;
+            const li = document.createElement('li');
+            li.style.color = "blue";
+            li.textContent = "입력을 취소하였습니다."
+            messages.appendChild(li);
+        });
+
         socket.on('turn_start', () => {
             const buttons = moveButtonsContainer.querySelectorAll('button');
             buttons.forEach(btn => btn.disabled = false); // >< 버튼 활성화/비활성화 코드
+
+            const switchBtns = switchButton.querySelectorAll('button');
+        switchBtns.forEach(btn => btn.disabled = false);
+        });
+
+        // [공격] 버튼 클릭 시
+        btnShowAttack.addEventListener('click', () => {
+            attackPanel.style.display = 'block';
+            partyPanel.style.display = 'none';
+        });
+
+        // [포켓몬] 버튼 클릭 시
+        btnShowParty.addEventListener('click', () => {
+            attackPanel.style.display = 'none';
+            partyPanel.style.display = 'block';
+        });
+
+        // 교체 패널 안의 [취소] 버튼
+        btnCancelSwitch.addEventListener('click', () => {
+            attackPanel.style.display = 'block';
+            partyPanel.style.display = 'none';
         });
     </script>
 </body>

@@ -5,6 +5,7 @@ import { Server } from 'socket.io';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { GameRoom } from './Game/room.js'; 
+import type { BattleAction } from './Game/room.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -52,12 +53,13 @@ io.on('connection', (socket) => {
         room.broadcastState(io);
     });
 
-    // 2. 공격 요청 처리 (라우팅)
-    socket.on('attack', (moveIndex) => {
+    
+    // 2. 행동 요청 처리(공격/교체))
+    socket.on('action', (actionData: BattleAction) => {
         // ★ 소켓 맵을 통해 이 유저가 어느 방 소속인지 찾음
         const roomId = socketToRoom[socket.id];
         if (roomId && rooms[roomId]) {
-            rooms[roomId].handleAttack(socket.id, moveIndex, io);
+            rooms[roomId].handleAction(socket.id, actionData, io); // 차피 필터링은 handleAction에서 하니까 그냥 넘겨주기만 하면 돼
         }
     });
 
