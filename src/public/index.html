@@ -196,11 +196,14 @@
                 Disbtn.style.marginRight = '5px';
                 Disbtn.style.cursor = 'pointer';
                 Disbtn.onclick = () => {
-                    const buttons = moveButtonsContainer.querySelectorAll('button'); // >< 버튼 활성화/비활성화 코드
+                    const buttons = moveButtonsContainer.querySelectorAll('button'); 
                     buttons.forEach(btn => btn.disabled = false);
+
+                    const switchBtns = switchButton.querySelectorAll('button');
                     switchBtns.forEach(btn => btn.disabled = false); // 교체 버튼
-                    const disBtn = discardButton.querySelectorAll('button');
-                    disBtn.forEach(btn => btn.disabled = true); // 취소 버튼
+                    
+                    Disbtn.disabled = true;
+                    
                     const li = document.createElement('li');
                     li.style.color = "blue";
                     li.textContent = "입력을 취소하였습니다."
@@ -236,7 +239,7 @@
             buttons.forEach(btn => btn.disabled = false); // >< 버튼 활성화/비활성화 코드
 
             const switchBtns = switchButton.querySelectorAll('button');
-        switchBtns.forEach(btn => btn.disabled = false);
+            switchBtns.forEach(btn => btn.disabled = false);
         });
 
         // [공격] 버튼 클릭 시
