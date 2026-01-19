@@ -201,13 +201,14 @@
 
                     const switchBtns = switchButton.querySelectorAll('button');
                     switchBtns.forEach(btn => btn.disabled = false); // 교체 버튼
-                    
+
                     Disbtn.disabled = true;
                     
                     const li = document.createElement('li');
                     li.style.color = "blue";
                     li.textContent = "입력을 취소하였습니다."
                     messages.appendChild(li);
+                    socket.emit('cancel_action');
                 };
                 discardButton.appendChild(Disbtn);
                 Disbtn.disabled = true;

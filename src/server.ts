@@ -63,6 +63,14 @@ io.on('connection', (socket) => {
         }
     });
 
+    // 행동 취소 처리
+    socket.on('cancel_action', () => {
+    const roomId = socketToRoom[socket.id];
+    if (roomId && rooms[roomId]) {
+        rooms[roomId].cancelAction(socket.id, io);
+    }
+    });
+
     // 3. 퇴장 처리
     socket.on('disconnect', () => {
         const roomId = socketToRoom[socket.id];

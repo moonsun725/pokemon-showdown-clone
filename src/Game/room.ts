@@ -75,24 +75,24 @@ export class GameRoom {
 
     // 행동 분할: 공격 and 교체
     handleAction(socketId: string, action: BattleAction, io: Server) {
-    const role = this.players[socketId];
-    if (!role) return;
+        const role = this.players[socketId];
+        if (!role) return;
 
-    // 1. 행동 저장
-    if (role === 'p1') this.p1Action = action;
-    if (role === 'p2') this.p2Action = action;
+        // 1. 행동 저장
+        if (role === 'p1') this.p1Action = action;
+        if (role === 'p2') this.p2Action = action;
 
-    // 2. 입력 잠금 (나만)
-    io.to(socketId).emit('input_locked'); 
+        // 2. 입력 잠금 (나만)
+        io.to(socketId).emit('input_locked'); 
 
-    // 3. 둘 다 행동을 선택했으면 턴 진행
-    if (this.p1Action && this.p2Action) {
-        this.resolveTurn(io);
-    } else {
-        const waiter = role === 'p1' ? 'P1' : 'P2';
-        io.to(this.roomId).emit('chat message', `[시스템] ${waiter} 준비 완료!`);
+        // 3. 둘 다 행동을 선택했으면 턴 진행
+        if (this.p1Action && this.p2Action) {
+            this.resolveTurn(io);
+        } else {
+            const waiter = role === 'p1' ? 'P1' : 'P2';
+            io.to(this.roomId).emit('chat message', `[시스템] ${waiter} 준비 완료!`);
+        }
     }
-}
 
     // 턴 계산 로직 (기존 함수 이식)
     private resolveTurn(io: Server) {
@@ -252,6 +252,25 @@ export class GameRoom {
             
         // 턴 시작 신호
         io.to(this.roomId).emit('turn_start');
+    }
+
+    // 행동 취소 반영 함수
+    cancelAction(socketId: string, io: Server)
+    {
+        const role = this.players[socketId];
+        if (!role) return;
+
+        // 1. 행동 데이터 삭제
+        if (role === 'p1') this.p1Action = null;
+        if (role === 'p2') this.p2Action = null;
+
+        // 2. 로그 출력 (선택사항)
+        console.log(`[Cancel] ${role} 행동 취소`);
+
+        // 3. (중요) 상대방에게 알림?
+        // 보통 포켓몬 쇼다운에서는 상대가 취소했는지 안 알려줍니다. (심리전)
+        // 하지만 나한테는 "취소되었습니다"라고 확실히 알려주는 게 좋습니다.
+        io.to(socketId).emit('chat message', '✅ 행동을 취소했습니다.');
     }
 
     // UI 업데이트 헬퍼
