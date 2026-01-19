@@ -204,7 +204,7 @@ export class GameRoom {
 
         // 상태이상 데미지
         ResolveStatusEffects(this.p1.activePokemon);
-        ResolveStatusEffects(this.p1.activePokemon); // (오타 주의: p2여야 함) -> ResolveStatusEffects(this.p2.activePokemon);
+        ResolveStatusEffects(this.p2.activePokemon); // (오타 주의: p2여야 함) -> ResolveStatusEffects(this.p2.activePokemon);
 
         // 행동 초기화
         this.p1Action = null;
