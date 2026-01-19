@@ -1,5 +1,6 @@
 // room.ts
 import { Server } from 'socket.io';
+import { Player } from '../Game/Player.js';
 import { Pokemon, createPokemon,} from './pokemon.js';
 import type { Move } from './pokemon.js';
 import { ResolveStatusEffects } from '../BattleSystem/StatusSystem.js';
@@ -8,25 +9,30 @@ export class GameRoom {
     public roomId: string;
     
     // 게임 상태 변수들 (server.ts의 전역 변수들이 멤버 변수가 됨)
-    public p1: Pokemon | null = null;
-    public p2: Pokemon | null = null;
+// ... class Room ...
+    p1: Player | null = null; // 이거 자세한 의미좀 알고 가야겠어
+    p2: Player | null = null;
     public players: { [socketId: string]: 'p1' | 'p2' } = {}; // 소켓ID -> 역할 매핑
     
-    private p1MoveIndex: number | null = null;
+    private p1MoveIndex: number | null = null; // 이거 인덱스는 p1의 엔트리 멤버가 돌려쓸거니까 크게 상관있진 않음
     private p2MoveIndex: number | null = null;
 
     constructor(id: string) {
         this.roomId = id;
     }
+    entry : Pokemon[] = [createPokemon("피카츄"), createPokemon("이상해씨")]; // 당장은 더미로 만들어
 
     // 유저 입장 처리
-    join(socketId: string): 'p1' | 'p2' | 'spectator' {
+    join(socketId: string): 'p1' | 'p2' | 'spectator'  // 여기 : 'p1' | 'p2' | 'spectator' 의미도 궁금해
+    {
         if (!this.p1) {
-            this.p1 = createPokemon("피카츄"); // 나중엔 유저가 고른 걸로 변경 가능
+            this.p1 = new Player(socketId, this.entry)
+            this.p1.activePokemon = this.p1.party[0]!; // >< 여기도 일단 느낌표처리
             this.players[socketId] = 'p1';
             return 'p1';
         } else if (!this.p2) {
-            this.p2 = createPokemon("이상해씨");
+            this.p2 = new Player(socketId, this.entry)
+            this.p2.activePokemon = this.p2.party[1]!; // 어쨋든 피카츄 대 이상해씨로 결과는 같다
             this.players[socketId] = 'p2';
             return 'p2';
         }
@@ -77,16 +83,19 @@ export class GameRoom {
     private resolveTurn(io: Server) {
         
         if (!this.p1 || !this.p2) return; // >< 안전장치
+        // (!this.p1.activePokemon || !this.p2.activePokemon) 이렇게쓰면 개체가 null이라고 오류남
 
         // 기술 객체 가져오기 (p1MoveIndex가 null이 아님을 보장해야 함)
-        const move1 = this.p1.moves[this.p1MoveIndex!];
-        const move2 = this.p2.moves[this.p2MoveIndex!];
+        const move1 = this.p1.activePokemon.moves[this.p1MoveIndex!];
+        const move2 = this.p2.activePokemon.moves[this.p2MoveIndex!];
 
         if (!move1 || !move2) return; // 에러 방지 >< : p1, p2, move1, move2가 null일 경우 방지
 
+        let poke1 = this.p1.activePokemon;
+        let poke2 = this.p2.activePokemon;
         // 스피드 계산 로직
-        let first = this.p1;
-        let second = this.p2;
+        let first = poke1;
+        let second = poke2;
         let firstMove = move1;
         let secondMove = move2; // 일단은 초깃값을 둔다
 
@@ -115,8 +124,8 @@ export class GameRoom {
 
         if (!p1goesFirst)
         {
-            first = this.p2; firstMove = move2;
-            second = this.p1; secondMove = move1;
+            first = poke2; firstMove = move2;
+            second = poke1; secondMove = move1;
         }
         // [Step A] 선공의 공격
         first.useMove(first.moves.indexOf(firstMove), second);
@@ -140,26 +149,26 @@ export class GameRoom {
 
         // --- 턴 종료 및 상태 업데이트 ---
         // 선택 초기화
-        ResolveStatusEffects(this.p1);
-        ResolveStatusEffects(this.p2);
+        ResolveStatusEffects(first); 
+        ResolveStatusEffects(second); // 당장은 행동 순서 기준으로 
         this.p1MoveIndex = null;
         this.p2MoveIndex = null;
 
         // 모든 클라이언트에게 최신 상태 전송 & 입력 잠금 해제
         io.to(this.roomId).emit('update_ui', { 
-            p1: { name: this.p1.name, hp: this.p1.hp, maxHp: this.p1.maxHp, moves: this.p1.moves },
-            p2: { name: this.p2.name, hp: this.p2.hp, maxHp: this.p2.maxHp, moves: this.p2.moves }
+            p1: { name: poke1.name, hp: poke1.hp, maxHp: poke1.maxHp, moves: poke1.moves },
+            p2: { name: poke2.name, hp: poke2.hp, maxHp: poke2.maxHp, moves: poke2.moves }
         });
 
-        if (this.p1.hp <= 0)
+        if (poke1.hp <= 0)
         {
-            io.to(this.roomId).emit('chat message', `💀 ${this.p1.name} 쓰러짐! ${this.p2.name} 승리!`);
+            io.to(this.roomId).emit('chat message', `💀 ${poke1.name} 쓰러짐! ${poke2.name} 승리!`);
             this.resetGame(io);
             return;
         }
-        if (this.p2.hp <= 0)
+        if (poke2.hp <= 0)
         {
-            io.to(this.roomId).emit('chat message', `💀 ${this.p2.name} 쓰러짐! ${this.p1.name} 승리!`);
+            io.to(this.roomId).emit('chat message', `💀 ${poke2.name} 쓰러짐! ${poke1.name} 승리!`);
             this.resetGame(io);
             return;
         }
@@ -172,11 +181,15 @@ export class GameRoom {
     resetGame(io: Server) {
     // 간단하게 체력만 원상복구
         if (!this.p1 || !this.p2) return;
-        this.p1.hp = this.p1.maxHp;
-        this.p2.hp = this.p2.maxHp;
+        let poke1 = this.p1.activePokemon; // 이게 다 레퍼런스 복사라 가능한거다 이말이야
+        let poke2 = this.p2.activePokemon;
+
+        poke1.hp = poke1.maxHp;
+        poke2.hp = poke1.maxHp;
+
         this.p1MoveIndex = null;
         this.p2MoveIndex = null;
-        this.p1.Rank = {
+        poke1.Rank = {
             atk: 0, 
             def: 0, 
             spd: 0,
@@ -186,7 +199,7 @@ export class GameRoom {
             eva: 0,
             crit: 0
         }
-        this.p2.Rank = {
+        poke2.Rank = {
             atk: 0, 
             def: 0, 
             spd: 0,
@@ -197,13 +210,13 @@ export class GameRoom {
             crit: 0
         }
         
-        this.p1.status = null;
-        this.p2.status = null;
+        poke1.status = null;
+        poke2.status = null;
 
         io.to(this.roomId).emit('chat message', `🔄 게임이 재시작되었습니다.`);
         io.to(this.roomId).emit('update_ui', { 
-            p1: { name: this.p1.name, hp: this.p1.hp, maxHp: this.p1.maxHp, moves: this.p1.moves },
-            p2: { name: this.p2.name, hp: this.p2.hp, maxHp: this.p2.maxHp, moves: this.p2.moves }
+            p1: { name: poke1.name, hp: poke1.hp, maxHp: poke1.maxHp, moves: poke1.moves },
+            p2: { name: poke2.name, hp: poke2.hp, maxHp: poke2.maxHp, moves: poke2.moves }
         });
         io.to(this.roomId).emit('turn_start');
     }
@@ -211,9 +224,12 @@ export class GameRoom {
     // UI 업데이트 헬퍼
     broadcastState(io: Server) {
         if (!this.p1 || !this.p2) return;
+        let poke1 = this.p1.activePokemon;
+        let poke2 = this.p2.activePokemon;
+
         io.to(this.roomId).emit('update_ui', {
-            p1: { name: this.p1.name, hp: this.p1.hp, maxHp: this.p1.maxHp, moves: this.p1.moves },
-            p2: { name: this.p2.name, hp: this.p2.hp, maxHp: this.p2.maxHp, moves: this.p2.moves }
+            p1: { name: poke1.name, hp: poke1.hp, maxHp: poke1.maxHp, moves: poke1.moves },
+            p2: { name: poke2.name, hp: poke2.hp, maxHp: poke2.maxHp, moves: poke2.moves }
         });
     }
 }
