@@ -419,7 +419,7 @@ export class GameRoom {
         if (!this.p1 || !this.p2) return;
         let poke1 = this.p1.activePokemon;
         let poke2 = this.p2.activePokemon;
-
+        this.gameState = 'MOVE_SELECT';
         io.to(this.roomId).emit('update_ui', {
             
             p1: { 
