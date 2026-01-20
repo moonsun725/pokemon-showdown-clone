@@ -45,23 +45,28 @@
             </div>
             
         </div>
+        <div id="main-menu" style="margin-bottom: 10px;">
+            <button id="btn-show-attack" style="width: 45%;">⚔️ 기술</button>
+            <button id="btn-show-party" style="width: 45%;">👜 교체</button>
+        </div>
 
         <div id="controls-area" style="margin: 20px 0; padding: 10px; border: 2px dashed #888;">
-            <h4>기술 선택</h4>
-            <div id="move-buttons" style="display: flex; gap: 10px;"></div>
-            <h4>교체</h4>
-            <div id="change-button" style="display: flex; gap: 10px;"></div>
-            <h4>선택 취소</h4>
-            <div id="discard-button" style="display: flex; gap: 10px;"></div>
-        </div>
+            
+            <div id="attack-panel">
+                <h4>기술 선택</h4>
+                <div id="move-buttons" style="display: flex; gap: 10px;"></div>
+                
+                <h4>선택 취소</h4>
+                <div id="discard-button"></div>
+            </div>
 
-        <div id="party-panel" style="display: none;">
-            <h4>교체할 포켓몬 선택</h4>
-            <div id="change-button" style="display: flex; gap: 10px; flex-wrap: wrap;"></div>
-            <button id="btn-cancel-switch" style="margin-top: 10px;">취소</button>
-        </div>
-        
+            <div id="party-panel" style="display: none;">
+                <h4>교체할 포켓몬 선택</h4>
+                <div id="change-button" style="display: flex; gap: 10px; flex-wrap: wrap;"></div>
+                <button id="btn-cancel-switch" style="margin-top: 10px;">닫기</button>
+            </div>
 
+        </div>
         <hr>
         <h3>전투 로그</h3>
         <ul id="messages"></ul>
@@ -125,6 +130,13 @@
         });
 
          socket.on('update_ui', (data) => {
+
+            const gameState = data.gameState; 
+            const faintId = data.faintPlayerId; // (필요하면 사용)
+
+             // (선택사항) 디버깅용: 콘솔이나 화면 구석에 상태 표시
+             console.log(`Current State: ${gameState}`);
+
             if (data.p1.active) {
                 p1Name.innerText = data.p1.active.name;
                 p1Hp.innerText = `HP: ${data.p1.active.hp} / ${data.p1.active.maxHp}`;
@@ -152,6 +164,25 @@
             else if (myRole === 'p2' && data.p2.party) myParty = data.p2.party;
             else return;
             
+            if (gameState === 'FORCE_SWITCH') {
+                // 교체 강제 상태라면?
+                // 1) 공격 패널 숨김, 교체 패널 보임
+                attackPanel.style.display = 'none';
+                partyPanel.style.display = 'block';
+                
+                // 2) 탭 전환 버튼이나 취소 버튼 숨겨버리기 (못 도망가게)
+                btnShowAttack.disabled = true; 
+                btnCancelSwitch.style.display = 'none'; // 취소 버튼 숨김
+                
+                // 안내 메시지
+                if (myRole === 'p1' && faintId === data.p1.id) { // 내 아이디랑 비교해야 하는데 여기선 로직이 좀 복잡할 수 있음
+                    // 일단 간단히 메시지 처리
+                }
+            } else {
+                // 평상시엔 다시 버튼 활성화
+                btnShowAttack.disabled = false;
+                btnCancelSwitch.style.display = 'inline-block';
+            }
 
             if (myMoves) {
                 myMoves.forEach((move, Moveindex) => {
@@ -198,19 +229,21 @@
                 Disbtn.style.marginRight = '5px';
                 Disbtn.style.cursor = 'pointer';
                 Disbtn.onclick = () => {
-                    const buttons = moveButtonsContainer.querySelectorAll('button'); 
-                    buttons.forEach(btn => btn.disabled = false);
+                    if(gameState != 'FORCE_SWITCH'){
+                        const buttons = moveButtonsContainer.querySelectorAll('button'); 
+                        buttons.forEach(btn => btn.disabled = false);
 
-                    const switchBtns = switchButton.querySelectorAll('button');
-                    switchBtns.forEach(btn => btn.disabled = false); // 교체 버튼
+                        const switchBtns = switchButton.querySelectorAll('button');
+                        switchBtns.forEach(btn => btn.disabled = false); // 교체 버튼
 
-                    Disbtn.disabled = true;
-                    
-                    const li = document.createElement('li');
-                    li.style.color = "blue";
-                    li.textContent = "입력을 취소하였습니다."
-                    messages.appendChild(li);
-                    socket.emit('cancel_action');
+                        Disbtn.disabled = true;
+                        
+                        const li = document.createElement('li');
+                        li.style.color = "blue";
+                        li.textContent = "입력을 취소하였습니다."
+                        messages.appendChild(li);
+                        socket.emit('cancel_action');
+                    }
                 };
                 discardButton.appendChild(Disbtn);
                 Disbtn.disabled = true;

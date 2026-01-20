@@ -227,7 +227,7 @@ export class GameRoom {
     // 턴 계산 로직 (기존 함수 이식)
     private resolveTurn(io: Server) {
         
-        if(this.gameState != 'BATTLE' && this.gameState != 'FORCE_SWITCH') return; // >< 판정 이거 맞지..?
+        if(this.gameState != 'BATTLE') return; 
         if (!this.p1 || !this.p2) return; // >< 안전장치
         if (!this.p1Action || !this.p2Action) return;
         // (!this.p1.activePokemon || !this.p2.activePokemon) 이렇게쓰면 개체가 null이라고 오류남
@@ -324,7 +324,7 @@ export class GameRoom {
                     this.gameState = 'FORCE_SWITCH';
                 }   
                 else{
-
+                    this.resetGame(io); // 임시 종료
                 }
                 return;
             }
@@ -419,7 +419,6 @@ export class GameRoom {
         if (!this.p1 || !this.p2) return;
         let poke1 = this.p1.activePokemon;
         let poke2 = this.p2.activePokemon;
-        this.gameState = 'MOVE_SELECT';
         io.to(this.roomId).emit('update_ui', {
             
             p1: { 
@@ -430,6 +429,8 @@ export class GameRoom {
             p2: { active : poke2,
                 party : this.p2.party 
             },
+            gameState: this.gameState,
+            faintPlayerId: this.faintPlayerId
         });
     }
 }
