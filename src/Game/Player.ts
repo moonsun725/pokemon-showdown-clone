@@ -40,9 +40,15 @@ export class Player {
         return true;
     }
 
+
     // 패배 체크 (파티 전멸 확인)
     isDefeated(): boolean {
         // 모든 포켓몬의 HP가 0 이하면 패배
-        return this.party.every(p => p.hp <= 0);
+        return this.party.every(p => p.status == "FNT");
+    }
+
+    hasRemainingPokemon(): boolean
+    {
+        return !this.party.every(p => p.status == "FNT");
     }
 }

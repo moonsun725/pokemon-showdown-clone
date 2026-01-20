@@ -181,6 +181,8 @@
                             Pokebtn.style.padding = '10px';
                             Pokebtn.style.marginRight = '5px';
                             Pokebtn.style.cursor = 'pointer';
+                            if(pokemon.status == "FNT")
+                                Pokebtn.disabled = true;
                             Pokebtn.onclick = () => {
                                 socket.emit('action', { type: 'switch', index: entryindex });
                             };

@@ -5,8 +5,58 @@ import { Pokemon, createPokemon,} from './pokemon.js';
 import type { Move } from './pokemon.js';
 import { ResolveStatusEffects } from '../BattleSystem/StatusSystem.js';
 
+/*
+
+변수/함수 목록
+// 행동 종류
+export type ActionType = 'move' | 'switch';
+
+// 방의 상태 종류
+type RoomState = 'MOVE_SELECT' | 'BATTLE' | 'FORCE_SWITCH' | 'WAITING_OPPONENT;
+
+// 행동 데이터 구조체
+export interface BattleAction {
+    type: ActionType;
+    index: number; // 기술 번호(0~3) 혹은 파티 번호(0~5)
+}
+
+// 게임 로직 
+class GameRoom
+{
+    p1: Player | null = null; 
+    p2: Player | null = null;
+    public players: { [socketId: string]: 'p1' | 'p2' } = {}; 
+    
+    private p1Action: BattleAction | null = null;
+    private p2Action: BattleAction | null = null;
+
+    // ★ [New] 현재 방의 상태 (기본값: 전투 중)
+    public gameState: RoomState = 'BATTLE'; 
+    
+    // ★ [New] 누가 교체해야 하는지 기억해둘 변수 (기절한 플레이어 ID)
+    public faintPlayerId: string | null = null;
+
+    join(socketId: string): 'p1' | 'p2' | 'spectator'
+    leave(socketId: string)
+
+    handleAction(socketId: string, action: BattleAction, io: Server)
+
+    private resolveTurn(io: Server)
+    private endTurn(io: Server)
+
+    resetGame(io: Server)
+    broadcastState(io: Server)
+}
+
+
+*/
+
+
 // 행동의 종류: 기술(move) or 교체(switch)
 export type ActionType = 'move' | 'switch';
+
+// 상태 머신
+type RoomState = 'MOVE_SELECT' | 'BATTLE' | 'FORCE_SWITCH' | 'WAITING_OPPONENT';
 
 // 행동 데이터 구조체
 export interface BattleAction {
@@ -27,6 +77,12 @@ export class GameRoom {
     
     private p1Action: BattleAction | null = null;
     private p2Action: BattleAction | null = null;
+
+    // ★ [New] 현재 방의 상태 (기본값: 전투 중)
+    public gameState: RoomState = 'MOVE_SELECT'; 
+    
+    // ★ [New] 누가 교체해야 하는지 기억해둘 변수 (기절한 플레이어 ID)
+    public faintPlayerId: string | null = null;
 
     constructor(id: string) {
         this.roomId = id;
@@ -88,15 +144,18 @@ export class GameRoom {
         // 3. 둘 다 행동을 선택했으면 턴 진행
         if (this.p1Action && this.p2Action) {
             this.resolveTurn(io);
+            this.gameState = 'BATTLE';
         } else {
             const waiter = role === 'p1' ? 'P1' : 'P2';
             io.to(this.roomId).emit('chat message', `[시스템] ${waiter} 준비 완료!`);
+            this.gameState = 'WAITING_OPPONENT';
         }
     }
 
     // 턴 계산 로직 (기존 함수 이식)
     private resolveTurn(io: Server) {
         
+        if(this.gameState != 'BATTLE' && this.gameState != 'FORCE_SWITCH') return; // >< 판정 이거 맞지..?
         if (!this.p1 || !this.p2) return; // >< 안전장치
         if (!this.p1Action || !this.p2Action) return;
         // (!this.p1.activePokemon || !this.p2.activePokemon) 이렇게쓰면 개체가 null이라고 오류남
@@ -185,9 +244,16 @@ export class GameRoom {
 
             // 공격 후 상대가 쓰러졌는지 체크 (게임 종료 로직)
             if (enemy.activePokemon.hp <= 0) {
-                io.to(this.roomId).emit('chat message', `💀 ${enemy.activePokemon.name} 쓰러짐!`);
+                io.to(this.roomId).emit('chat message', `💀 ${enemy.activePokemon.name}는 쓰러졌다!`);
                 // 여기서 resetGame 혹은 '강제 교체' 페이즈로 넘어가야 함
-                this.resetGame(io); 
+                if(enemy.hasRemainingPokemon())
+                {
+                    io.to(enemy.id).emit('force_switch_request');
+                    this.gameState = 'FORCE_SWITCH';
+                }   
+                else{
+                    
+                }
                 return;
             }
         }
@@ -218,6 +284,23 @@ export class GameRoom {
             this.resetGame(io); // 임시 종료
         } else {
             io.to(this.roomId).emit('turn_start');
+        }
+    }
+
+    private handleFaint(target: Player, io: Server) {
+        // 1. 남은 포켓몬이 있는지 확인 (아까 만든 헬퍼 함수)
+        if (target.hasRemainingPokemon()) {
+            
+            // 2. ★ roomId 필요 없음! target.id(socketId)로 직접 전송
+            // "너 교체해야 돼!"라고 귓속말 보냄
+            io.to(target.id).emit('force_switch_request');
+            
+            // 3. 방 상태 변경 (잠시 멈춤)
+            console.log(`[Battle] ${target.id}에게 강제 교체 요청 전송`);
+
+        } else {
+            // 4. 남은 거 없으면 게임 종료
+            this.resetGame(io); 
         }
     }
     

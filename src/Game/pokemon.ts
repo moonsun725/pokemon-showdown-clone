@@ -7,6 +7,64 @@ import { RankToMultiplier, RankToMultiplierAccEv, RankToMultiplierCrit } from '.
 import { calculateDamage } from '../BattleSystem/dmgCalc.js';
 import { ApplyEffect } from '../BattleSystem/moveAbility.js';
 
+/*
+// 변수/함수 목록
+
+export interface Move {
+    name: string;
+    power: number;
+    type: string;
+    accuracy: number | null; 
+    category: string; 
+
+    priority?: number;
+    effect?: string; 
+    chance?: number; 
+
+    data?: {
+        selfChanges?: { stat: string, value: number }[]; 
+        targetChanges?: { stat: string, value: number }[]; 
+        
+    };
+}
+
+export class Pokemon {
+    public name: string;
+    public hp: number;
+    public maxHp: number;
+    public atk: number;
+    public speed: number;
+
+    public moves: Move[] = [];
+    public types: string[] = [];
+
+    public status: string | null = null; 
+
+    public Rank: Rank = {
+        atk: 0, 
+        def: 0, 
+        spd: 0,
+        satk: 0,
+        sdef: 0,
+        acc: 0,
+        eva: 0,
+        crit: 0
+    }
+
+    constructor(name: string, hp: number, atk: number, speed: number, types: string[]) 
+    
+    showCurrent() : void
+    learnMove(move: Move) : void
+    useMove(moveIndex: number, target: Pokemon,)'modifyRank(stat: keyof Rank, amount: number) : void
+    modifyRank(stat: keyof Rank, amount: number): void 
+    takeDamage(amount: number): void
+    CheckAcuracy(move: Move, target: Pokemon): boolean
+    ResetCondition(): void
+}
+
+export function createPokemon(name: string): Pokemon
+*/
+
 // 1. 기술 인터페이스 정의 (C++의 struct 역할)
 export interface Move {
     name: string;
@@ -94,7 +152,7 @@ export class Pokemon {
     }
 
     // 특정 기술로 공격하기
-    useMove(moveIndex: number, target: Pokemon,): void {
+    useMove(moveIndex: number, target: Pokemon): void {
         const move = this.moves[moveIndex];
         if (!move) {
             console.log("[pokemon]: 잘못된 기술 선택입니다.");
@@ -154,6 +212,11 @@ export class Pokemon {
     takeDamage(amount: number): void {
         this.hp -= amount;
         console.log(`[pokemon]: ${this.name}의 남은 HP: ${this.hp}`);
+        if (this.hp < 0)
+        {
+            this.hp = 0;
+            this.status = "FNT";
+        }
     }
 
     CheckAcuracy(move: Move, target: Pokemon): boolean {

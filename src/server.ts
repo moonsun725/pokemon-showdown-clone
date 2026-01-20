@@ -71,6 +71,13 @@ io.on('connection', (socket) => {
     }
     });
 
+    socket.on('force_switch_request', () =>{
+        const roomId = socketToRoom[socket.id];
+        if (roomId && rooms[roomId]) {
+            rooms[roomId].cancelAction(socket.id, io);
+    }
+    });
+
     // 3. 퇴장 처리
     socket.on('disconnect', () => {
         const roomId = socketToRoom[socket.id];
