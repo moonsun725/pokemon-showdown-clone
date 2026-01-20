@@ -131,24 +131,96 @@ export class GameRoom {
 
     // 행동 분할: 공격 and 교체
     handleAction(socketId: string, action: BattleAction, io: Server) {
+        // FSM: 현재 상태에 따라 처리 로직을 완전히 분리
+        switch (this.gameState) {
+            case 'MOVE_SELECT':
+            case 'WAITING_OPPONENT': // 이 두 상태는 '전투 입력'을 받는 단계
+                this.handleBattleInput(socketId, action, io);
+                break;
+
+            case 'FORCE_SWITCH': // 기절 교체 대기 중
+                this.handleForceSwitchInput(socketId, action, io);
+                break;
+
+            case 'BATTLE': // 연산 중일 때는 입력 차단
+                return; 
+        }
+    }
+
+    private handleBattleInput(socketId: string, action: BattleAction, io: Server) {
         const role = this.players[socketId];
         if (!role) return;
 
-        // 1. 행동 저장
+        // 1. 이미 선택한 사람이 또 보낸 경우 (WAITING 상태 방어)
+        if (role === 'p1' && this.p1Action) return; 
+        if (role === 'p2' && this.p2Action) return;
+
+        // 2. 행동 저장
         if (role === 'p1') this.p1Action = action;
         if (role === 'p2') this.p2Action = action;
+        
+        // UI 잠금 (해당 유저에게만)
+        io.to(socketId).emit('input_locked');
 
-        // 2. 입력 잠금 (나만)
-        io.to(socketId).emit('input_locked'); 
-
-        // 3. 둘 다 행동을 선택했으면 턴 진행
+        // 3. 상태 전이 판단
         if (this.p1Action && this.p2Action) {
-            this.resolveTurn(io);
-            this.gameState = 'BATTLE';
+            // 둘 다 준비 완료! -> 전투 개시
+            this.gameState = 'BATTLE'; // 잠시 배틀 상태로 변경
+            this.resolveTurn(io);      // 턴 계산 (여기서 다시 MOVE_SELECT나 FORCE_SWITCH로 바뀜)
         } else {
+            // 한 명만 준비됨 -> 대기 상태
+            this.gameState = 'WAITING_OPPONENT';
             const waiter = role === 'p1' ? 'P1' : 'P2';
             io.to(this.roomId).emit('chat message', `[시스템] ${waiter} 준비 완료!`);
-            this.gameState = 'WAITING_OPPONENT';
+        }
+    }
+
+    private handleFaint(target: Player, io: Server) {
+        if (target.hasRemainingPokemon()) {
+            // 1. 상태 변경
+            this.gameState = 'FORCE_SWITCH';
+            
+            // 2. ★ [중요] 누가 죽었는지 기억해야 함!
+            this.faintPlayerId = target.id; 
+
+            // 3. 요청 전송
+            io.to(target.id).emit('force_switch_request');
+            io.to(this.roomId).emit('chat message', `[시스템] ${target.id}님이 다음 포켓몬을 고르고 있습니다.`);
+            console.log(`[Battle] State changed to FORCE_SWITCH. Waiting for ${target.id}`);
+
+        } else {
+            // 전멸 -> 게임 종료 및 리셋
+            io.to(this.roomId).emit('chat message', `🏆 ${target.id} 패배! 게임 종료.`);
+            this.resetGame(io); 
+        }
+    }
+
+    private handleForceSwitchInput(socketId: string, action: BattleAction, io: Server) {
+        // 1. 교체해야 할 사람이 맞는지 확인
+        if (socketId !== this.faintPlayerId) return;
+
+        // 2. 공격(move)은 안됨, 교체(switch)만 허용
+        if (action.type !== 'switch') return;
+
+        const player = (this.players[socketId] === 'p1') ? this.p1 : this.p2;
+        if (!player) return;
+
+        // 3. 교체 시도
+        if (player.switchPokemon(action.index)) {
+            
+            // 성공 시 상태 복구 -> 다시 기술 선택 단계로
+            this.gameState = 'MOVE_SELECT';
+            this.faintPlayerId = null; // 초기화
+
+            // UI 갱신
+            io.to(this.roomId).emit('chat message', `🔄 ${player.activePokemon.name}(이)가 새로 나왔습니다!`);
+            this.broadcastState(io);
+            
+            // 턴 시작 알림 (이제 다시 싸우자!)
+            io.to(this.roomId).emit('turn_start');
+        } else {
+            // 실패 (이미 기절한 놈 고름 등)
+            io.to(socketId).emit('chat message', '비활성 포켓몬입니다. 다시 선택해주세요.');
         }
     }
 
@@ -252,7 +324,7 @@ export class GameRoom {
                     this.gameState = 'FORCE_SWITCH';
                 }   
                 else{
-                    
+
                 }
                 return;
             }
@@ -284,23 +356,6 @@ export class GameRoom {
             this.resetGame(io); // 임시 종료
         } else {
             io.to(this.roomId).emit('turn_start');
-        }
-    }
-
-    private handleFaint(target: Player, io: Server) {
-        // 1. 남은 포켓몬이 있는지 확인 (아까 만든 헬퍼 함수)
-        if (target.hasRemainingPokemon()) {
-            
-            // 2. ★ roomId 필요 없음! target.id(socketId)로 직접 전송
-            // "너 교체해야 돼!"라고 귓속말 보냄
-            io.to(target.id).emit('force_switch_request');
-            
-            // 3. 방 상태 변경 (잠시 멈춤)
-            console.log(`[Battle] ${target.id}에게 강제 교체 요청 전송`);
-
-        } else {
-            // 4. 남은 거 없으면 게임 종료
-            this.resetGame(io); 
         }
     }
     
@@ -340,6 +395,8 @@ export class GameRoom {
     // 행동 취소 반영 함수
     cancelAction(socketId: string, io: Server)
     {
+        if (this.gameState !== 'WAITING_OPPONENT') return; // 아마 이 상황을 볼 일은 없을겁니다(왜냐하면 button.disabled에서 처리를 해주고 있으니 최소한의 안전장치라 생각)
+
         const role = this.players[socketId];
         if (!role) return;
 
@@ -354,6 +411,7 @@ export class GameRoom {
         // 보통 포켓몬 쇼다운에서는 상대가 취소했는지 안 알려줍니다. (심리전)
         // 하지만 나한테는 "취소되었습니다"라고 확실히 알려주는 게 좋습니다.
         io.to(socketId).emit('chat message', '✅ 행동을 취소했습니다.');
+        this.gameState = 'MOVE_SELECT';
     }
 
     // UI 업데이트 헬퍼
