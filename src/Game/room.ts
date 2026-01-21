@@ -371,40 +371,7 @@ export class GameRoom {
         }
  
     }
-    
-    
-    resetGame(io: Server) {
-        // 1. 공통 초기화 로직 (함수로 분리하여 중복 제거)
-        const resetPlayerTeam = (player: Player | null) => {
-            if (!player) return;
 
-            // ★ forEach 사용법
-            // player.party 배열의 모든 요소를 순회하며 'pokemon' 변수에 담아 실행
-            player.party.forEach((pokemon)=>{pokemon.ResetCondition()});
-
-            // (4) 선봉 초기화 (다시 1번 타자로 설정)
-            // 게임이 리셋됐으니 다시 첫 번째 포켓몬이 나와야겠죠?
-            if (player.party.length > 0) {
-                player.activePokemon = player.party[0]!;
-            }};
-
-        // 2. 양쪽 플레이어 팀 리셋
-        resetPlayerTeam(this.p1);
-        resetPlayerTeam(this.p2);
-
-        // 3. 행동 선택 정보 초기화
-        this.p1Action = null;
-        this.p2Action = null;
-
-        // 4. UI 업데이트 및 알림
-        io.to(this.roomId).emit('chat message', `🔄 게임이 재시작되었습니다. 모든 포켓몬이 회복되었습니다.`);
-            
-        // 정보 갱신 (이제 activePokemon이 0번으로 바뀌었으므로 갱신 필수)
-        this.broadcastState(io);
-            
-        // 턴 시작 신호
-        io.to(this.roomId).emit('turn_start');
-    }
 
     // 행동 취소 반영 함수
     cancelAction(socketId: string, io: Server)
@@ -447,5 +414,41 @@ export class GameRoom {
             gameState: this.gameState,
             faintPlayerId: this.faintPlayerId
         });
+    }
+
+    resetGame(io: Server) {
+        // 1. 공통 초기화 로직 (함수로 분리하여 중복 제거)
+        const resetPlayerTeam = (player: Player | null) => {
+            if (!player) return;
+
+            // ★ forEach 사용법
+            // player.party 배열의 모든 요소를 순회하며 'pokemon' 변수에 담아 실행
+            player.party.forEach((pokemon)=>{pokemon.ResetCondition()});
+
+            // (4) 선봉 초기화 (다시 1번 타자로 설정)
+            // 게임이 리셋됐으니 다시 첫 번째 포켓몬이 나와야겠죠?
+            if (player.party.length > 0) {
+                player.activePokemon = player.party[0]!;
+            }};
+
+        // 2. 양쪽 플레이어 팀 리셋
+        resetPlayerTeam(this.p1);
+        resetPlayerTeam(this.p2);
+
+        // 3. 행동 선택 정보 초기화
+        this.p1Action = null;
+        this.p2Action = null;
+
+        this.gameState = 'MOVE_SELECT'; 
+        this.faintPlayerId = null;
+
+        // 4. UI 업데이트 및 알림
+        io.to(this.roomId).emit('chat message', `🔄 게임이 재시작되었습니다. 모든 포켓몬이 회복되었습니다.`);
+            
+        // 정보 갱신 (이제 activePokemon이 0번으로 바뀌었으므로 갱신 필수)
+        this.broadcastState(io);
+            
+        // 턴 시작 신호
+        io.to(this.roomId).emit('turn_start');
     }
 }
