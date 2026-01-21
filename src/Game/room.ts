@@ -179,7 +179,7 @@ export class GameRoom {
             const waiter = role === 'p1' ? 'P1' : 'P2';
             io.to(this.roomId).emit('chat message', `[시스템] ${waiter} 준비 완료!`);
         }
-        console.log("[room.handleBattleInput]: ",this.gameState);
+        console.log("[room.ts]/[handleBattleInput]: ",this.gameState);
     }
 
     private handleFaint(target: Player, io: Server) {
@@ -222,12 +222,7 @@ export class GameRoom {
             this.gameState = 'MOVE_SELECT';
             this.faintPlayerId = null; // 초기화
 
-            // UI 갱신
-            io.to(this.roomId).emit('chat message', `🔄 ${player.activePokemon.name}(이)가 새로 나왔습니다!`);
-            this.broadcastState(io);
-            
-            // 턴 시작 알림 (이제 다시 싸우자!)
-            io.to(this.roomId).emit('turn_start');
+            this.endTurn(io);
         } else {
             // 실패 (이미 기절한 놈 고름 등)
             io.to(socketId).emit('chat message', '비활성 포켓몬입니다. 다시 선택해주세요.');
@@ -329,9 +324,9 @@ export class GameRoom {
                 io.to(this.roomId).emit('chat message', `💀 ${enemy.activePokemon.name}는 쓰러졌다!`);
                 // 여기서 resetGame 혹은 '강제 교체' 페이즈로 넘어가야 함
                 this.handleFaint(enemy, io); 
+                return; 
             }
-            return;
-            
+            // 원래 실수로 return이 여기 있었음. 그러니까 resolveTurn이 강제 종료 -> endTurn 메서드 호출 실패함...
         }
 
         // ====================================================
