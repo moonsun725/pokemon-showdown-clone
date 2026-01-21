@@ -58,6 +58,9 @@ io.on('connection', (socket) => {
     socket.on('action', (actionData: BattleAction) => {
         // ★ 소켓 맵을 통해 이 유저가 어느 방 소속인지 찾음
         const roomId = socketToRoom[socket.id];
+
+        console.log(`[server.ts]/[socket.on('action')]: Received from ${socket.id} / Type: ${actionData.type}`);
+
         if (roomId && rooms[roomId]) {
             rooms[roomId].handleAction(socket.id, actionData, io); // 차피 필터링은 handleAction에서 하니까 그냥 넘겨주기만 하면 돼
         }
@@ -68,13 +71,6 @@ io.on('connection', (socket) => {
     const roomId = socketToRoom[socket.id];
     if (roomId && rooms[roomId]) {
         rooms[roomId].cancelAction(socket.id, io);
-    }
-    });
-
-    socket.on('force_switch_request', () =>{
-        const roomId = socketToRoom[socket.id];
-        if (roomId && rooms[roomId]) {
-            rooms[roomId].cancelAction(socket.id, io);
     }
     });
 

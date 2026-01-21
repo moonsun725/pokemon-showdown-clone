@@ -193,6 +193,7 @@
                     btn.style.cursor = 'pointer';
 
                     btn.onclick = () => {
+                        console.log(`[index.html]/[MoveBtn.onclick]: emit 'action' (move: ${Moveindex})`);
                         socket.emit('action', { type: 'move', index: Moveindex });
                     };
                     moveButtonsContainer.appendChild(btn);
@@ -215,6 +216,7 @@
                             if(pokemon.status == "FNT")
                                 Pokebtn.disabled = true;
                             Pokebtn.onclick = () => {
+                                console.log(`[index.html]/[PokeBtn.onclick]: emit 'action' (switch: ${entryindex})`);
                                 socket.emit('action', { type: 'switch', index: entryindex });
                             };
                             switchButton.appendChild(Pokebtn);

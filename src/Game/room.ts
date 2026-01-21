@@ -132,6 +132,9 @@ export class GameRoom {
     // 행동 분할: 공격 and 교체
     handleAction(socketId: string, action: BattleAction, io: Server) {
         // FSM: 현재 상태에 따라 처리 로직을 완전히 분리
+
+        console.log(`[room.ts]/[handleAction]: User(${socketId}) Action: ${action.type}, Current State: ${this.gameState}`);
+
         switch (this.gameState) {
             case 'MOVE_SELECT':
             case 'WAITING_OPPONENT': // 이 두 상태는 '전투 입력'을 받는 단계
@@ -161,23 +164,28 @@ export class GameRoom {
         
         // UI 잠금 (해당 유저에게만)
         io.to(socketId).emit('input_locked');
+        console.log(`[room.ts]/[handleBattleInput]: ${socketId} 입력 잠금 (WAITING_OPPONENT 진입 예상)`);
 
         // 3. 상태 전이 판단
         if (this.p1Action && this.p2Action) {
             // 둘 다 준비 완료! -> 전투 개시
             this.gameState = 'BATTLE'; // 잠시 배틀 상태로 변경
+            console.log(`[room.ts]/[handleBattleInput]: State (WAITING -> BATTLE) / 턴 계산 시작`);
             this.resolveTurn(io);      // 턴 계산 (여기서 다시 MOVE_SELECT나 FORCE_SWITCH로 바뀜)
         } else {
             // 한 명만 준비됨 -> 대기 상태
+            console.log(`[room.ts]/[handleBattleInput]: State (MOVE_SELECT -> WAITING_OPPONENT) / 상대 대기 중`);
             this.gameState = 'WAITING_OPPONENT';
             const waiter = role === 'p1' ? 'P1' : 'P2';
             io.to(this.roomId).emit('chat message', `[시스템] ${waiter} 준비 완료!`);
         }
+        console.log("[room.handleBattleInput]: ",this.gameState);
     }
 
     private handleFaint(target: Player, io: Server) {
         if (target.hasRemainingPokemon()) {
             // 1. 상태 변경
+            console.log(`[room.ts]/[endTurn]: State (${this.gameState} -> FORCE_SWITCH)`);
             this.gameState = 'FORCE_SWITCH';
             
             // 2. ★ [중요] 누가 죽었는지 기억해야 함!
@@ -187,6 +195,8 @@ export class GameRoom {
             io.to(target.id).emit('force_switch_request');
             io.to(this.roomId).emit('chat message', `[시스템] ${target.id}님이 다음 포켓몬을 고르고 있습니다.`);
             console.log(`[Battle] State changed to FORCE_SWITCH. Waiting for ${target.id}`);
+
+            this.broadcastState(io); // >< 포켓몬이 기절했는데 UI 갱신 처리가 안 되어있었다...
 
         } else {
             // 전멸 -> 게임 종료 및 리셋
@@ -296,7 +306,7 @@ export class GameRoom {
             }
         }
 
-            // 스피드/우선도 정렬 (내림차순)
+        // 스피드/우선도 정렬 (내림차순)
         attackers.sort((a, b) => {
             if (a.priority !== b.priority) return b.priority - a.priority; // 우선도 먼저
             if (a.speed !== b.speed) return b.speed - a.speed; // 스피드 다음
@@ -309,25 +319,19 @@ export class GameRoom {
             const enemy = (user === p1) ? p2 : p1; // 상대방 찾기
             
             // ★ 기절 체크: 내 턴이 오기 전에 맞아 죽었으면 공격 못함
-            if (user.activePokemon.hp <= 0) continue;
+            if (user.activePokemon.status === "FNT") continue;
 
             // 공격 실행
             user.activePokemon.useMove(attacker.moveIndex, enemy.activePokemon);
 
             // 공격 후 상대가 쓰러졌는지 체크 (게임 종료 로직)
-            if (enemy.activePokemon.hp <= 0) {
+            if (enemy.activePokemon.status === "FNT") {
                 io.to(this.roomId).emit('chat message', `💀 ${enemy.activePokemon.name}는 쓰러졌다!`);
                 // 여기서 resetGame 혹은 '강제 교체' 페이즈로 넘어가야 함
-                if(enemy.hasRemainingPokemon())
-                {
-                    io.to(enemy.id).emit('force_switch_request');
-                    this.gameState = 'FORCE_SWITCH';
-                }   
-                else{
-                    this.resetGame(io); // 임시 종료
-                }
-                return;
+                this.handleFaint(enemy, io); 
             }
+            return;
+            
         }
 
         // ====================================================
@@ -338,6 +342,7 @@ export class GameRoom {
 
     // 턴 종료 시 공통 처리 (함수로 분리 추천)
     private endTurn(io: Server) {
+        console.log(`[room.ts]/[endTurn]: 턴 종료 처리 시작`);
         if (!this.p1 || !this.p2) return;
 
         // 상태이상 데미지
@@ -351,13 +356,22 @@ export class GameRoom {
         // UI 업데이트 및 턴 시작 신호
         this.broadcastState(io);
         
-        // 혹시 상태이상 뎀으로 죽었는지 체크
-        if (this.p1.activePokemon.hp <= 0 || this.p2.activePokemon.hp <= 0) {
-            this.resetGame(io); // 임시 종료
-        } else {
+        if(this.p1.activePokemon.status === "FNT")
+        {
+            this.handleFaint(this.p1, io);
+        } 
+        else if (this.p2.activePokemon.status === "FNT")
+        {
+            this.handleFaint(this.p2, io);
+        }
+        else {
+            console.log(`[room.ts]/[endTurn]: State (BATTLE -> MOVE_SELECT) / 다음 턴 시작`);
+            this.gameState = 'MOVE_SELECT';
             io.to(this.roomId).emit('turn_start');
         }
+ 
     }
+    
     
     resetGame(io: Server) {
         // 1. 공통 초기화 로직 (함수로 분리하여 중복 제거)

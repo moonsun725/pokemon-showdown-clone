@@ -212,7 +212,7 @@ export class Pokemon {
     takeDamage(amount: number): void {
         this.hp -= amount;
         console.log(`[pokemon]: ${this.name}의 남은 HP: ${this.hp}`);
-        if (this.hp < 0)
+        if (this.hp <= 0)
         {
             this.hp = 0;
             this.status = "FNT";
