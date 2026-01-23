@@ -303,9 +303,16 @@ export class GameRoom {
 
         // 스피드/우선도 정렬 (내림차순)
         attackers.sort((a, b) => {
-            if (a.priority !== b.priority) return b.priority - a.priority; // 우선도 먼저
-            if (a.speed !== b.speed) return b.speed - a.speed; // 스피드 다음
-            return Math.random() - 0.5; // 동속 랜덤
+            // 우선도(만 단위) + 스피드(일 단위) = 행동 결정력(Action Value)
+            const scoreA = (a.priority * 100000) + a.speed;
+            const scoreB = (b.priority * 100000) + b.speed;
+
+            if (scoreA !== scoreB) {
+                return scoreB - scoreA; // 점수가 높은 쪽이 먼저 (내림차순)
+            }
+        
+            // 점수가 아예 똑같으면(동속 + 우선도 동일) 랜덤
+            return Math.random() - 0.5; 
         });
 
         // 정렬된 순서대로 공격 실행
