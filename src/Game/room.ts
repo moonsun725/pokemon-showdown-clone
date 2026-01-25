@@ -2,7 +2,7 @@
 import { Server } from 'socket.io';
 import { Player } from '../Game/Player.js';
 import { Pokemon, createPokemon,} from './pokemon.js';
-import type { Move } from './pokemon.js';
+import type { Move } from './Moves/move.js';
 import { ResolveStatusEffects } from '../BattleSystem/StatusSystem.js';
 
 /*

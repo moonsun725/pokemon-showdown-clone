@@ -1,5 +1,5 @@
 import { Pokemon } from '../Game/pokemon.js';
-import type { Move } from '../Game/pokemon.js';
+import type { Move } from '../Game/Moves/move.js';
 import { TryApplyStatus } from './StatusSystem.js';
 
 // 트리거 타입 정의: 언제 호출되었는가?

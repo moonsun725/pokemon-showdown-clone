@@ -132,33 +132,34 @@ export class Pokemon {
 
         // 변화기(Status) 처리: 데미지 계산 건너뛰기
         if (move.category === 'Status') {
-            console.log(`(변화기 발동 로직이 들어갈 곳)`);
-            // 여기서 return 하거나, 아래 데미지 로직을 else로 감싸야 함
             if (move.effect && move.chance) {
-                console.log("[pokemon]:부가효과 있음!");
                 // 적에게 부가효과 적용
+                console.log("[pokemon]: 변화기 처리")
                 ApplyEffect(move, target, this, 'OnHit');
-
             }   
             return; 
         }
 
-        let DMGRes = calculateDamage(this, target, move);
+        { // 데미지 계산
+            let DMGRes = calculateDamage(this, target, move);
 
-        let effectivenessMsg = "";
-        if (DMGRes.effectiveness > 1) effectivenessMsg = " (효과가 굉장했다!)";
-        if (DMGRes.effectiveness < 1 && DMGRes.effectiveness > 0) effectivenessMsg = " (효과가 별로인 듯하다...)";
-        if (DMGRes.effectiveness === 0) effectivenessMsg = " (효과가 없다!)";
-        console.log(`${effectivenessMsg}`);
+            let effectivenessMsg = "";
+            if (DMGRes.effectiveness > 1) effectivenessMsg = " (효과가 굉장했다!)";
+            if (DMGRes.effectiveness < 1 && DMGRes.effectiveness > 0) effectivenessMsg = " (효과가 별로인 듯하다...)";
+            if (DMGRes.effectiveness === 0) effectivenessMsg = " (효과가 없다!)";
+            console.log(`${effectivenessMsg}`);
 
-        // 피해 적용
-        target.takeDamage(DMGRes.damage);
-        console.log(`[pokemon]:💥 ${target.name}은(는) ${DMGRes.damage}의 피해를 입었다! 남은 HP: ${target.hp}/${target.maxHp}`);
+            // 피해 적용
+            target.takeDamage(DMGRes.damage);
+            console.log(`[pokemon]:💥 ${target.name}은(는) ${DMGRes.damage}의 피해를 입었다! 남은 HP: ${target.hp}/${target.maxHp}`);
+        }
 
+        // 공격기의 경우, 부가효과 처리
         if (move.effect && move.chance) {
             console.log("[pokemon]: 부가효과 있음!");
             ApplyEffect(move, target, this, 'OnHit');
         }   
+
         return;
     }
 
