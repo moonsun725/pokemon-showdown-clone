@@ -1,6 +1,7 @@
 import data_M from '../Data/moves.json' with { type: 'json' };
 import data_P from '../Data/pokedex.json' with { type: 'json' };
-
+import type { Move } from './Moves/move.js';
+import { GetMove } from './Moves/MoveManager.js';
 import getTypeEffectiveness from '../BattleSystem/typeChart.js';
 import type { Rank } from '../BattleSystem/Rank.js';
 import { RankToMultiplier, RankToMultiplierAccEv, RankToMultiplierCrit } from '../BattleSystem/Rank.js';
@@ -9,25 +10,6 @@ import { ApplyEffect } from '../BattleSystem/moveAbility.js';
 
 /*
 // 변수/함수 목록
-
-export interface Move {
-    name: string;
-    power: number;
-    type: string;
-    accuracy: number | null; 
-    category: string; 
-
-    priority?: number;
-    effect?: string; 
-    chance?: number; 
-
-    data?: {
-        selfChanges?: { stat: string, value: number }[]; 
-        targetChanges?: { stat: string, value: number }[]; 
-        
-    };
-}
-
 export class Pokemon {
     public name: string;
     public hp: number;
@@ -65,32 +47,6 @@ export class Pokemon {
 export function createPokemon(name: string): Pokemon
 */
 
-// 1. 기술 인터페이스 정의 (C++의 struct 역할)
-export interface Move {
-    name: string;
-    power: number;
-    type: string;
-    accuracy: number | null; // 명중률 추가 (null은 명중률이 없는 기술)
-    category: string; // 물리, 특수, 변화 상태 구분
-
-    priority?: number;
-    // TS 문법: 물음표
-    // JSON에 이 값이 있으면 string/number가 들어오고,
-    // 아예 안 적혀 있으면 자동으로 'undefined'가 됩니다.
-    effect?: string;  // Statchange, burn, paralysis, Recoil 등
-    chance?: number; 
-
-    data?: {
-        // 1. 나에게 적용될 랭크 변화 (OnUse 시점)
-        selfChanges?: { stat: string, value: number }[]; 
-
-        // 2. 적에게 적용될 랭크 변화 (OnHit 시점)
-        targetChanges?: { stat: string, value: number }[]; // ★ 여러 개를 담을 수 있는 배열 추가
-        // recoil?: number;  // 나중에 추가될 반동 데미지 비율
-        // drain?: number;   // 나중에 추가될 흡수 비율
-    };
-}
-
 export class Pokemon {
     public name: string;
     public hp: number;
@@ -126,10 +82,10 @@ export class Pokemon {
         this.speed = speed || 10; // 기본값 처리
         this.types = types; 
         
-        this.learnMove(data_M.moves[0] as unknown as Move); // 10만볼트(기준확인)
-        this.learnMove(data_M.moves[3] as unknown as Move); // 맹독
-        this.learnMove(data_M.moves[4] as unknown as Move); // 전광석화
-        this.learnMove(data_M.moves[5] as unknown as Move); // 칼춤
+        this.learnMove("10만볼트"); // 10만볼트(기준확인)
+        this.learnMove("맹독"); // 맹독
+        this.learnMove("전광석화"); // 전광석화
+        this.learnMove("칼춤"); // 칼춤
 
         
     }
@@ -146,9 +102,15 @@ export class Pokemon {
     }
 
     // 기술 배우기 메서드
-    learnMove(move: Move): void {
-        this.moves.push(move);
-        console.log(`[pokemon]: ${this.name}이(가) [${move.name}]을(를) 배웠다!`);
+    learnMove(moveName: string): void {
+        const move = GetMove(moveName); // 매니저한테 "10만볼트 줘"
+        if (move) {
+            this.moves.push(move);
+            console.log(`[pokemon]: ${this.name}이(가) [${move.name}]을(를) 배웠다!`);
+        }
+        else
+            console.log("[pokemon] 기술 데이터가 존재하지 않음.")
+        
     }
 
     // 특정 기술로 공격하기

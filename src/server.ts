@@ -6,6 +6,8 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { GameRoom } from './Game/room.js'; 
 import type { BattleAction } from './Game/room.js';
+import { LoadMoves } from './Game/Moves/MoveManager.js';
+LoadMoves(); // 위치 상관없다니까...?
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
