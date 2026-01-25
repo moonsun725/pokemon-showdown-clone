@@ -35,7 +35,8 @@ export function calculateDamage(attacker: Pokemon, defender: Pokemon, move: Move
         }
 
         // 데미지 계산
-        baseDamage = Math.floor(move.power * realAtk / realDef / 50);
+        
+        baseDamage = Math.floor(move.power! * realAtk / realDef / 50); // 어차피 usemove에서 다 검증하고 보내주니까 power는 null일 수가 없다고 내가 말해줘야지...
         console.log(`[DamageCalc]: 기본 데미지 (보정 전): ${baseDamage}`);
         baseDamage = Math.floor(baseDamage * Tmultiplier); // ★ 상성에 따른 배율 적용
         baseDamage = Math.floor(baseDamage * STAB); // ★ 자속 보정 적용
