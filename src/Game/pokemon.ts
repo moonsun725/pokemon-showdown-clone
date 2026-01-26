@@ -82,11 +82,15 @@ export class Pokemon {
         this.speed = speed || 10; // 기본값 처리
         this.types = types; 
         
-        this.learnMove("10만볼트"); // 10만볼트(기준확인)
+        /*this.learnMove("10만볼트"); // 10만볼트(기준확인)
         this.learnMove("맹독"); // 맹독
         this.learnMove("전광석화"); // 전광석화
-        this.learnMove("칼춤"); // 칼춤
+        this.learnMove("칼춤"); // 칼춤 */
 
+        this.learnMove(data_M.moves[0] as unknown as Move); // 10만볼트(기준확인)
+        this.learnMove(data_M.moves[3] as unknown as Move); // 맹독
+        this.learnMove(data_M.moves[4] as unknown as Move); // 전광석화
+        this.learnMove(data_M.moves[5] as unknown as Move); // 칼춤
         
     }
 
@@ -102,7 +106,7 @@ export class Pokemon {
     }
 
     // 기술 배우기 메서드
-    learnMove(moveName: string): void {
+    learnMove1(moveName: string): void {
         const move = GetMove(moveName); // 매니저한테 "10만볼트 줘"
         if (move) {
             this.moves.push(move);
@@ -111,6 +115,11 @@ export class Pokemon {
         else
             console.log("[pokemon] 기술 데이터가 존재하지 않음.")
         
+    }
+
+    learnMove(move: Move): void {
+        this.moves.push(move);
+        console.log(`[pokemon]: ${this.name}이(가) [${move.name}]을(를) 배웠다!`);
     }
 
     // 특정 기술로 공격하기
