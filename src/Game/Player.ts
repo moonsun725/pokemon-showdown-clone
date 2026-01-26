@@ -1,5 +1,5 @@
 import { Pokemon} from './pokemon.js';
-import type { Move } from './pokemon.js'
+import type { Move } from './Moves/move.js'
 // (나중에 아이템 클래스도 import 필요)
 
 export class Player {
