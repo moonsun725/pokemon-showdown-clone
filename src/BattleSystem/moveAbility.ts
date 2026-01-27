@@ -12,63 +12,14 @@ export interface MoveAbility {
     
     // 기술이 명중했을 때 발동 (주로 피격자 대상)
     OnHit(target: Pokemon, move: Move, user: Pokemon): void;
+    OnEndMove(user: Pokemon, move: Move): void;
 }
 
 // 기본값 (Null Object Pattern) - 구현하지 않은 메서드는 아무 일도 안 함
 const DefaultAbility: MoveAbility = {
     OnUse: () => {},
-    OnHit: () => {}
-};
-
-// =========================================================
-// 레지스트리 (Registry)
-// 기술의 effect(문자열)와 실제 로직을 매핑
-// =========================================================
-const AbilityRegistry: { [key: string]: MoveAbility } = {
-
-    // 1. 상태이상 계열 (Status Effects)
-    // OnHit 타이밍에 StatusSystem을 호출하여 상태 부여 시도
-    "PAR": { ...DefaultAbility, OnHit: (t) => { 
-        if(t.types.includes("Electric")) return;
-        TryApplyStatus(t, "PAR"); } },
-    "BRN": { ...DefaultAbility, OnHit: (t) => { 
-        if(t.types.includes("Fire")) return; 
-        TryApplyStatus(t, "BRN"); } },
-    "PSN": { ...DefaultAbility, OnHit: (t) => { 
-        if(t.types.includes("Poison") || t.types.includes("Steel")) return;
-        TryApplyStatus(t, "PSN"); } },
-
-    // 2. 랭크 변화 (Stat Change)
-    // OnUse(내 버프)와 OnHit(상대 디버프)를 모두 처리하는 범용 로직
-    "StatChange": {
-        ...DefaultAbility,
-
-       // ① OnUse: 내 스탯 변화 (selfChanges가 있을 때만)
-        OnUse: (user: Pokemon, move: Move) => {
-            const d = move.data;
-            if (d && d.selfChanges) {
-                console.log(`💪 [OnUse] ${user.name}의 스탯 변화!`);
-                d.selfChanges.forEach(c => {
-                    // @ts-ignore
-                    user.modifyRank(c.stat, c.value);
-                    console.log(`   └ 사용자 ${c.stat} ${c.value}랭크`);
-                });
-            }
-        },
-
-        // ② OnHit: 적 스탯 변화 (targetChanges가 있을 때만)
-        OnHit: (target: Pokemon, move: Move, user: Pokemon) => {
-            const d = move.data;
-            if (d && d.targetChanges) {
-                console.log(`📉 [OnHit] ${target.name}에게 디버프 적용!`);
-                d.targetChanges.forEach(c => {
-                    // @ts-ignore
-                    target.modifyRank(c.stat, c.value);
-                    console.log(`   └ 적 ${c.stat} ${c.value}랭크`);
-                });
-            }
-        }
-    }
+    OnHit: () => {},
+    OnEndMove: () => {}
 };
 
 // =========================================================
@@ -98,3 +49,54 @@ export function ApplyEffect(move: Move, target: Pokemon, user: Pokemon, trigger:
         console.warn(`⚠️ [MoveAbility] 구현되지 않은 효과 스크립트: ${move.effect}`);
     }
 }
+
+// =========================================================
+// 레지스트리 (Registry)
+// 기술의 effect(문자열)와 실제 로직을 매핑
+// =========================================================
+const AbilityRegistry: { [key: string]: MoveAbility } = {
+
+    // 1. 상태이상 계열 (Status Effects)
+    // OnHit 타이밍에 StatusSystem을 호출하여 상태 부여 시도
+    "PAR": { ...DefaultAbility, OnHit: (t) => { 
+        if(t.types.includes("Electric")) return;
+        TryApplyStatus(t, "PAR"); } },
+    "BRN": { ...DefaultAbility, OnHit: (t) => { 
+        if(t.types.includes("Fire")) return; 
+        TryApplyStatus(t, "BRN"); } },
+    "PSN": { ...DefaultAbility, OnHit: (t) => { 
+        if(t.types.includes("Poison") || t.types.includes("Steel")) return;
+        TryApplyStatus(t, "PSN"); } },
+
+    // 2. 랭크 변화 (Stat Change)
+    // OnUse(내 버프)와 OnHit(상대 디버프)를 모두 처리하는 범용 로직
+    "StatChange": {
+        ...DefaultAbility,
+
+       // ① OnUse: 내 스탯 변화 (selfChanges가 있을 때만)
+        OnUse: (user: Pokemon, move: Move) => {
+            const d = move.effectdata;
+            if (d && d.selfChanges) {
+                console.log(`💪 [OnUse] ${user.name}의 스탯 변화!`);
+                d.selfChanges.forEach(c => {
+                    // @ts-ignore
+                    user.modifyRank(c.stat, c.value);
+                    console.log(`   └ 사용자 ${c.stat} ${c.value}랭크`);
+                });
+            }
+        },
+
+        // ② OnHit: 적 스탯 변화 (targetChanges가 있을 때만)
+        OnHit: (target: Pokemon, move: Move, user: Pokemon) => {
+            const d = move.effectdata;
+            if (d && d.targetChanges) {
+                console.log(`📉 [OnHit] ${target.name}에게 디버프 적용!`);
+                d.targetChanges.forEach(c => {
+                    // @ts-ignore
+                    target.modifyRank(c.stat, c.value);
+                    console.log(`   └ 적 ${c.stat} ${c.value}랭크`);
+                });
+            }
+        }
+    }
+};

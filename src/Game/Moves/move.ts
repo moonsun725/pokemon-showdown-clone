@@ -17,7 +17,8 @@ export interface Move {
     
     priority?: number; // JSON: "전광석화"에만 있음 (Optional)
     effect?: string;   // "PAR", "StatChange" 등
-    chance?: number;   // 상태이상 확률
+    chance?: number;   // effect가 적용될 확률(ex: 10만볼트의 마비 10%, 섀도볼 특방떨 20%)
     
-    data?: MoveMetadata; // ★ 위에서 정의한 구조체 연결
+    effectdata?: MoveMetadata; // ★ 위에서 정의한 구조체 연결
+    isContact?: boolean; // 접촉기 여부
 }

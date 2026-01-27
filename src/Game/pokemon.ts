@@ -82,16 +82,16 @@ export class Pokemon {
         this.speed = speed || 10; // 기본값 처리
         this.types = types; 
         
-        /*this.learnMove("10만볼트"); // 10만볼트(기준확인)
+        this.learnMove("10만볼트"); // 10만볼트(기준확인)
         this.learnMove("맹독"); // 맹독
         this.learnMove("전광석화"); // 전광석화
-        this.learnMove("칼춤"); // 칼춤 */
-
+        this.learnMove("칼춤"); // 칼춤 
+        /*
         this.learnMove(data_M.moves[0] as unknown as Move); // 10만볼트(기준확인)
         this.learnMove(data_M.moves[3] as unknown as Move); // 맹독
         this.learnMove(data_M.moves[4] as unknown as Move); // 전광석화
         this.learnMove(data_M.moves[5] as unknown as Move); // 칼춤
-        
+        */
     }
 
     // 상태 확인 메서드
@@ -106,21 +106,31 @@ export class Pokemon {
     }
 
     // 기술 배우기 메서드
-    learnMove1(moveName: string): void {
-        const move = GetMove(moveName); // 매니저한테 "10만볼트 줘"
-        if (move) {
-            this.moves.push(move);
-            console.log(`[pokemon]: ${this.name}이(가) [${move.name}]을(를) 배웠다!`);
+    learnMove(moveName: string): void {
+        const move = GetMove(moveName);
+
+        // 2. 예외 처리: 오타나 없는 기술일 경우
+        if (!move) {
+            console.error(`[Error] '${moveName}'라는 기술은 존재하지 않습니다.`);
+            return;
         }
-        else
-            console.log("[pokemon] 기술 데이터가 존재하지 않음.")
+
+        // 3. 중복 습득 방지 (선택 사항)
+        if (this.moves.find(m => m.name === move.name)) {
+            console.warn(`[System] ${this.name}은(는) 이미 [${move.name}]을(를) 알고 있다.`);
+            return;
+        }
+
+        // 4. 습득 (기술 개수 4개 제한 로직은 나중에 추가)
+        this.moves.push(move);
+        console.log(`[pokemon]: ${this.name}이(가) [${move.name}]을(를) 배웠다!`);
         
     }
 
-    learnMove(move: Move): void {
+    /*learnMove(move: Move): void {
         this.moves.push(move);
         console.log(`[pokemon]: ${this.name}이(가) [${move.name}]을(를) 배웠다!`);
-    }
+    }*/
 
     // 특정 기술로 공격하기
     useMove(moveIndex: number, target: Pokemon): void {
