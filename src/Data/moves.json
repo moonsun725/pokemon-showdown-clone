@@ -1,17 +1,17 @@
 {
     "moves": [
-    { "name": "10만볼트", "power": 90, "type": "Electric", "accuracy": 100, "category": "Special", "effect": "PAR", "chance": 10},
-    { "name": "화염방사", "power": 90, "type": "Fire", "accuracy" : 90, "category": "Special", "effect": "BRN", "chance": 10},
-    { "name": "지진", "power": 100, "type": "Ground" , "accuracy": 100, "category": "Physical"},
-    { "name": "맹독", "power": null, "type": "Poison" , "accuracy": 90, "category": "Status", "effect": "PSN", "chance": 100},
+    { "name": "10만볼트", "power": 90, "type": "Electric", "accuracy": 100, "category": "Special", "PP": 15, "effect": "PAR", "chance": 10},
+    { "name": "화염방사", "power": 90, "type": "Fire", "accuracy" : 90, "category": "Special", "PP": 15, "effect": "BRN", "chance": 10},
+    { "name": "지진", "power": 100, "type": "Ground" , "accuracy": 100, "category": "Physical", "PP": 10},
+    { "name": "맹독", "power": null, "type": "Poison" , "accuracy": 90, "category": "Status", "PP": 10, "effect": "PSN", "chance": 100},
     { 
-      "name": "전광석화", "power": 40, "type": "Normal", "accuracy": 100, "category": "Physical", "priority": 1, "isContact": true},
-    { "name": "칼춤", "power": null, "type": "Normal" , "accuracy": null, "category": "Status", "effect": "StatChange", 
+      "name": "전광석화", "power": 40, "type": "Normal", "accuracy": 100, "category": "Physical", "PP": 40, "priority": 1, "isContact": true},
+    { "name": "칼춤", "power": null, "type": "Normal" , "accuracy": null, "category": "Status", "PP": 20, "effect": "StatChange", 
       "effectdata": { 
         "selfChanges": [ { "stat": "atk", "value": 2 } ]
       }
     },
-    { "name": "껍질깨기", "power": null, "type": "Normal", "accuracy": null, "category": "Status", "effect": "StatChange",
+    { "name": "껍질깨기", "power": null, "type": "Normal", "accuracy": null, "category": "Status", "PP": 15, "effect": "StatChange",
       "effectdata": {
         "selfChanges": [
           { "stat": "atk", "value": 2 },
@@ -22,12 +22,12 @@
         ]
       }
     },
-    { "name": "울음소리", "power":null, "type": "Normal", "accuracy": null, "category": "Status", "effect": "StatChange",
+    { "name": "울음소리", "power":null, "type": "Normal", "accuracy": null, "category": "Status", "PP": 40, "effect": "StatChange",
       "effectdata": {
         "targetChanges": [{"stat": "atk", "value": -1}]
       }
     },
-    { "name": "인파이트", "power": 120, "type": "Fighting", "accuracy": 100, "category": "Physical", "effect": "StatChange",
+    { "name": "인파이트", "power": 120, "type": "Fighting", "accuracy": 100, "category": "Physical", "PP": 5, "effect": "StatChange",
       "effectdata":{
         "selfChanges":[
           { "stat": "def", "value": -1 },
@@ -36,6 +36,6 @@
       },
         "isContact": true
     },
-    { "name": "베놈쇼크", "power": 65, "type": "Poison", "accuracy": 100, "category": "Physical", "effect": "VenomShock" }
+    { "name": "베놈쇼크", "power": 65, "type": "Poison", "accuracy": 100, "category": "Physical", "PP": 10, "effect": "VenomShock" }
   ]
 }

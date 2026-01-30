@@ -22,3 +22,10 @@ export interface Move {
     effectdata?: MoveMetadata; // ★ 위에서 정의한 구조체 연결
     isContact?: boolean; // 접촉기 여부
 }
+
+// ★ [New] 포켓몬이 실제로 가지게 될 구조체
+export interface MoveInstance {
+    def: Move;      // 원본 기술 데이터 (참조 포인터)
+    currentPp: number; // 현재 남은 PP (가변 데이터)
+    maxPp: number;     // 최대 PP (나중에 포인트업 아이템 쓰면 늘어남)
+}
