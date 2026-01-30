@@ -14,6 +14,7 @@ export interface Move {
     type: string;      // JSON: "Electric"
     accuracy: number | null;
     category: string;  // "Physical" | "Special" | "Status"
+    pp: number;
     
     priority?: number; // JSON: "전광석화"에만 있음 (Optional)
     effect?: string;   // "PAR", "StatChange" 등
@@ -28,4 +29,10 @@ export interface MoveInstance {
     def: Move;      // 원본 기술 데이터 (참조 포인터)
     currentPp: number; // 현재 남은 PP (가변 데이터)
     maxPp: number;     // 최대 PP (나중에 포인트업 아이템 쓰면 늘어남)
+
+    // ★ 실제 변하는 데이터 (Instance 고유) ex: 연속자르기, 구르기(n턴에 걸쳐 버프)
+    volatileData?: {
+        consecutiveHits: number;
+        lockedTargets: string[]; 
+    };
 }

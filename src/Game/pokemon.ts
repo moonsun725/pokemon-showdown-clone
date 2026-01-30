@@ -1,6 +1,6 @@
 import data_M from '../Data/moves.json' with { type: 'json' };
 import data_P from '../Data/pokedex.json' with { type: 'json' };
-import type { Move } from './Moves/move.js';
+import type { Move, MoveInstance } from './Moves/move.js';
 import { GetMove } from './Moves/MoveManager.js';
 import getTypeEffectiveness from '../BattleSystem/typeChart.js';
 import type { Rank } from '../BattleSystem/Rank.js';
@@ -53,7 +53,7 @@ export class Pokemon {
     public maxHp: number;
     public atk: number;
     // 2. 기술 배열 추가 (C++의 std::vector<Move> 느낌)
-    public moves: Move[] = [];
+    public moves: MoveInstance[] = [];
 
     // 26-01-15. 스피드 항목 추가
     public speed: number;
@@ -101,29 +101,27 @@ export class Pokemon {
             if (element == null){
                 throw new Error('[pokemon]:더 이상 배운 기술이 없습니다!');
             }
-            console.log("[pokemon]: 기술명:", element.name, "공격 타입:", element.type, "기술 위력:", element.power);
+            console.log("[pokemon]: 기술명:", element.def.name, "공격 타입:", element.def.type, "기술 위력:", element.def.power);
         });
     }
 
     // 기술 배우기 메서드
     learnMove(moveName: string): void {
-        const move = GetMove(moveName);
+        const moveData = GetMove(moveName);
 
         // 2. 예외 처리: 오타나 없는 기술일 경우
-        if (!move) {
+        if (!moveData) {
             console.error(`[Error] '${moveName}'라는 기술은 존재하지 않습니다.`);
             return;
         }
 
-        // 3. 중복 습득 방지 (선택 사항)
-        if (this.moves.find(m => m.name === move.name)) {
-            console.warn(`[System] ${this.name}은(는) 이미 [${move.name}]을(를) 알고 있다.`);
-            return;
-        }
+        const newInstance: MoveInstance = {
+            def: moveData,             // 원본은 참조만 함 (메모리 절약)
+            currentPp: moveData.pp,    // 현재 PP 초기화
+            maxPp: moveData.pp         // 최대 PP 설정
+        };
 
-        // 4. 습득 (기술 개수 4개 제한 로직은 나중에 추가)
-        this.moves.push(move);
-        console.log(`[pokemon]: ${this.name}이(가) [${move.name}]을(를) 배웠다!`);
+        this.moves.push(newInstance);
         
     }
 
@@ -134,7 +132,7 @@ export class Pokemon {
 
     // 특정 기술로 공격하기
     useMove(moveIndex: number, target: Pokemon): void {
-        const move = this.moves[moveIndex];
+        const move = this.moves[moveIndex]?.def;
         if (!move) {
             console.log("[pokemon]: 잘못된 기술 선택입니다.");
             return;
