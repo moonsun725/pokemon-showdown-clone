@@ -5,22 +5,10 @@ import { TryApplyStatus } from './StatusSystem.js';
 // 트리거 타입 정의: 언제 호출되었는가?
 export type EffectTrigger = 'OnUse' | 'OnHit';
 
-// 인터페이스 정의
-export interface MoveAbility {
-    // 기술을 시전하자마자 발동 (주로 사용자 대상, 명중 여부 무관)
-    OnUse(user: Pokemon, move: Move): void;
-    
-    // 기술이 명중했을 때 발동 (주로 피격자 대상)
-    OnHit(target: Pokemon, move: Move, user: Pokemon, damage: number): void;
-    OnAfterAttack(user: Pokemon, move: Move): void;
+interface AbilityLogic {
+    // 더 이상 user, target을 구분해서 받지 않고, "적용 대상(target)" 하나만 받음
+    Execute(target: Pokemon, data: any, damage?: number): void;
 }
-
-// 기본값 (Null Object Pattern) - 구현하지 않은 메서드는 아무 일도 안 함
-const DefaultAbility: MoveAbility = {
-    OnUse: () => {},
-    OnHit: () => {},
-    OnAfterAttack: () => {}
-};
 
 // =========================================================
 // 메인 실행 함수 (Dispatcher)
@@ -33,11 +21,13 @@ export function ProcessMoveEffects(
     attacker: Pokemon, // user (쓰는 쪽)
     currentTiming: EffectTrigger, // 현재 시점 ('OnUse' or 'OnHit')
     damage: number = 0
-): void {
+    ): void 
+{
     
     if (!move.effects) return;
 
-    for (const entry of move.effects) {
+    for (const entry of move.effects) // effects가 effect의 배열이니 foreach로 내용물 확인
+    { 
         
         // 1. [필터링] 타이밍 체크
         // JSON에 타이밍이 적혀있는데, 지금 시점과 다르면 스킵!
@@ -58,8 +48,9 @@ export function ProcessMoveEffects(
         } else if (entry.target === 'Enemy') {
             actualTarget = defender;
         } else {
-             // 타겟 명시가 없으면 타이밍에 따라 관례적으로 처리
-             actualTarget = (currentTiming === 'OnUse') ? attacker : defender;
+             // 타겟 명시가 없으면 타이밍에 따라 관례적으로 처리 (일단 무조건 포함하도록 짜긴 했는데 )
+             actualTarget = (currentTiming === 'OnUse') ? attacker : defender; 
+             console.log("[ProcessMoveEffects]: 부가효과의 타겟이 명시되어 있지 않음.")
         }
 
         // 4. 로직 실행
@@ -75,57 +66,62 @@ export function ProcessMoveEffects(
 // 레지스트리 (Registry)
 // 기술의 effect(문자열)와 실제 로직을 매핑
 // =========================================================
-const AbilityRegistry: { [key: string]: MoveAbility } = {
+
+const AbilityRegistry: { [key: string]: AbilityLogic } = {
 
     // 1. 상태이상 계열 (Status Effects)
     // OnHit 타이밍에 StatusSystem을 호출하여 상태 부여 시도
-    "PAR": { ...DefaultAbility, OnHit: (t) => { 
-        if(t.types.includes("Electric")) return;
-        TryApplyStatus(t, "PAR"); } },
-    "BRN": { ...DefaultAbility, OnHit: (t) => { 
-        if(t.types.includes("Fire")) return; 
-        TryApplyStatus(t, "BRN"); } },
-    "PSN": { ...DefaultAbility, OnHit: (t) => { 
-        if(t.types.includes("Poison") || t.types.includes("Steel")) return;
-        TryApplyStatus(t, "PSN"); } },
+    "PAR": { 
+        Execute: (target) => {
+            if (!target.types.includes("Electic")) 
+                TryApplyStatus(target, "BRN");
+        }
+    },
+    "BRN": {
+        Execute: (target) => {
+            if (!target.types.includes("Fire")) 
+                TryApplyStatus(target, "BRN");
+        }
+    },
+    "PSN": {
+        Execute: (target) => {
+            if (!target.types.includes("Poison") && target.types.includes("Steel")) 
+                TryApplyStatus(target, "PSN");
+        }
+    },
 
     // 2. 랭크 변화 (Stat Change)
     // OnUse(내 버프)와 OnHit(상대 디버프)를 모두 처리하는 범용 로직
     "StatChange": {
-        ...DefaultAbility,
-
-       // ① OnUse: 내 스탯 변화 (selfChanges가 있을 때만)
-        OnUse: (user: Pokemon, move: Move) => {
-            const d = move.effectdata;
-            if (d && d.selfChanges) {
-                console.log(`💪 [OnUse] ${user.name}의 스탯 변화!`);
-                d.selfChanges.forEach(c => {
-                    // @ts-ignore
-                    user.modifyRank(c.stat, c.value);
-                    console.log(`   └ 사용자 ${c.stat} ${c.value}랭크`);
-                });
-            }
-        },
-
-        // ② OnHit: 적 스탯 변화 (targetChanges가 있을 때만)
-        OnHit: (target: Pokemon, move: Move, user: Pokemon) => {
-            const d = move.effectdata;
-            if (d && d.targetChanges) {
-                console.log(`📉 [OnHit] ${target.name}에게 디버프 적용!`);
-                d.targetChanges.forEach(c => {
-                    // @ts-ignore
-                    target.modifyRank(c.stat, c.value);
-                    console.log(`   └ 적 ${c.stat} ${c.value}랭크`);
-                });
-            }
+        Execute: (target, data) => {
+            // data가 { stat: 'atk', value: -1 } 형태로 들어옴
+            target.modifyRank(data.stat, data.value);
+            console.log(`📊 ${target.name}의 ${data.stat} ${data.value}랭크 변화!`);
         }
-    
     },
 
+    // 반동 (반동은 무조건 '나'에게 데미지를 줌 -> JSON에서 target: "Self" 설정 필수)
     "Recoil": {
-        ...DefaultAbility, // 기본값 먼저 깔아두기
-        OnHit: (target: Pokemon, move: Move, user: Pokemon, damage: number) =>{
-            user.takeDamage(damage)
+        Execute: (target, data, damage) => {
+            const ratio = data?.recoilRate || 0;
+            if (damage && damage > 0) 
+                target.takeDamage(Math.floor(damage * ratio));
+            
+        }
+    },
+
+    "Drain": {
+        Execute: (target, data, damage) => {
+            const ratio = data?.drainRate || 0;
+            if (damage && damage > 0) 
+                target.recoverHp(Math.floor(damage * ratio));
+        }
+    },
+
+    "Recover": {
+        Execute: (target, data) => {
+            const ratio = data?.recoverRate || 0;
+            target.recoverHp(Math.floor(target.maxHp * ratio));
         }
     }
 

@@ -1,52 +1,127 @@
 {
     "moves": [
-    { "name": "10만볼트", "power": 90, "type": "Electric", "accuracy": 100, "category": "Special", "PP": 15, "effect": "PAR", "chance": 10},
-    { "name": "화염방사", "power": 90, "type": "Fire", "accuracy" : 90, "category": "Special", "PP": 15, "effect": "BRN", "chance": 10},
+    { "name": "10만볼트", "power": 90, "type": "Electric", "accuracy": 100, "category": "Special", "PP": 15, 
+    "effects": 
+      {
+        "type": "PAR",
+        "timing": "OnHit",
+        "target": "Enemy",
+        "chance": 10 
+      }
+    },
+    { "name": "화염방사", "power": 90, "type": "Fire", "accuracy" : 90, "category": "Special", "PP": 15, 
+      "effects": 
+      {
+        "type": "BRN",
+        "timing": "OnHit",
+        "target": "Enemy",
+        "chance": 10 
+      }
+    },
     { "name": "지진", "power": 100, "type": "Ground" , "accuracy": 100, "category": "Physical", "PP": 10},
-    { "name": "맹독", "power": null, "type": "Poison" , "accuracy": 90, "category": "Status", "PP": 10, "effect": "PSN", "chance": 100},
-    { 
-      "name": "전광석화", "power": 40, "type": "Normal", "accuracy": 100, "category": "Physical", "PP": 40, "priority": 1, "isContact": true},
-    { "name": "칼춤", "power": null, "type": "Normal" , "accuracy": null, "category": "Status", "PP": 20, "effect": "StatChange", 
-      "effectdata": { 
-        "selfChanges": [ { "stat": "atk", "value": 2 } ]
+    { "name": "독가스", "power": null, "type": "Poison" , "accuracy": 90, "category": "Status", "PP": 40, 
+      "effects": 
+        {
+          "type": "PSN",
+          "timing": "OnHit",
+          "target": "Enemy" 
+        }
+    },
+    { "name": "전광석화", "power": 40, "type": "Normal", "accuracy": 100, "category": "Physical", "PP": 40, "priority": 1},
+    { "name": "칼춤", "power": null, "type": "Normal" , "accuracy": null, "category": "Status", "PP": 20, 
+      "effects": 
+      {
+        "type": "StatChange",
+        "timing": "OnUse",
+        "target": "Self",
+        "data": { "stat": "atk", "value": 2}
       }
     },
-    { "name": "껍질깨기", "power": null, "type": "Normal", "accuracy": null, "category": "Status", "PP": 15, "effect": "StatChange",
-      "effectdata": {
-        "selfChanges": [
-          { "stat": "atk", "value": 2 },
-          { "stat": "spa", "value": 2 },
-          { "stat": "spe", "value": 2 },
-          { "stat": "def", "value": -1 },
-          { "stat": "spd", "value": -1 }
-        ]
-      }
+    { "name": "껍질깨기", "power": null, "type": "Normal", "accuracy": null, "category": "Status", "PP": 15,
+      "effects": [
+        {
+          "type": "StatChange",
+          "timing": "OnUse",
+          "target": "Self",
+          "data": [ 
+              { "stat": "atk", "value": 2 },
+              { "stat": "spa", "value": 2 },
+              { "stat": "spe", "value": 2 },
+              { "stat": "def", "value": -1 },
+              { "stat": "spd", "value": -1 }
+          ]
+        }
+      ]
     },
-    { "name": "울음소리", "power":null, "type": "Normal", "accuracy": null, "category": "Status", "PP": 40, "effect": "StatChange",
-      "effectdata": {
-        "targetChanges": [{"stat": "atk", "value": -1}]
-      }
+    { "name": "울음소리", "power":null, "type": "Normal", "accuracy": null, "category": "Status", "PP": 40,
+      "effects": [
+        {
+          "type": "StatChange",
+          "timing": "OnUse",    
+          "target": "Enemy",    
+          "data": { "stat": "atk", "value": -1 }
+        }
+      ]
     },
-    { "name": "인파이트", "power": 120, "type": "Fighting", "accuracy": 100, "category": "Physical", "PP": 5, "effect": "StatChange",
-      "effectdata":{
-        "selfChanges":[
-          { "stat": "def", "value": -1 },
-          { "stat": "spd", "value": -1 }
-        ]
-      },
-        "isContact": true
+    { "name": "인파이트", "power": 120, "type": "Fighting", "accuracy": 100, "category": "Physical", "PP": 5, 
+      "effects": [
+        {
+          "type": "StatChange",
+          "timing": "OnHit",    
+          "target": "Self",    
+          "data": [
+            { "stat": "def", "value": -1 },
+            { "stat": "spd", "value": -1 }
+          ]
+        }
+      ]
     },
-    { "name": "베놈쇼크", "power": 65, "type": "Poison", "accuracy": 100, "category": "Physical", "PP": 10, "effect": "VenomShock" },
+    { "name": "베놈쇼크", "power": 65, "type": "Poison", "accuracy": 100, "category": "Physical", "PP": 10, 
+      "effects": "VenomShock" 
+    },
     { "name":"플레어드라이브", "power":120, "type": "Fire", "accuracy": 100, "category": "Physical", "PP": 15, 
       "effects":[
         {
           "type": "Recoil",
-          "chance": 100, 
-          "data": { "ratio": 0.33 } 
+          "timing": "OnHit",
+          "target": "Self",
+          "data": { "recoilRate": 0.33 } 
         },
         {
           "type": "BRN",
+          "timing": "OnHit",
+          "target": "Enemy",
           "chance": 10 
+        }
+      ]
+    },
+    { "name": "용성군", "power": 130, "type": "Dragon", "accuracy": 90, "category": "Special", "PP": 5,
+      "effects": [
+        {
+          "type": "StatChange",
+          "timing": "OnHit",    
+          "target": "Self",
+          "data": { "stat": "spa", "value": -2 } 
+        }
+      ]   
+    },
+    { "name": "기가드레인", "power": 75, "type": "Grass", "accuracy": 100, "category": "Special", "PP": 10,
+      "effects":[
+        {
+          "type": "Drain",
+          "timing": "OnHit",    
+          "target": "Self",
+          "data": { "drainRate": 0.5 } 
+        }
+      ]
+    },
+    { "name": "HP회복", "power": null, "type": "Normal", "accuracy":null, "category":"Status", "PP": 5,
+      "effects":[
+        {
+          "type": "Recover",
+          "timing": "OnUse",    
+          "target": "Self",
+          "data": { "recoverRate": 0.5 } 
         }
       ]
     }
