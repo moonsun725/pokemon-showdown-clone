@@ -1,4 +1,3 @@
-import data_M from '../Data/moves.json' with { type: 'json' };
 import data_P from '../Data/pokedex.json' with { type: 'json' };
 import type { Move, MoveInstance } from './Moves/move.js';
 import { GetMove } from './Moves/MoveManager.js';
@@ -107,18 +106,23 @@ export class Pokemon {
 
     // 기술 배우기 메서드
     learnMove(moveName: string): void {
-        const moveData = GetMove(moveName);
-
-        // 2. 예외 처리: 오타나 없는 기술일 경우
-        if (!moveData) {
+        const originalMove = GetMove(moveName);
+    
+        if (!originalMove) {
             console.error(`[Error] '${moveName}'라는 기술은 존재하지 않습니다.`);
             return;
         }
 
         const newInstance: MoveInstance = {
-            def: moveData,             // 원본은 참조만 함 (메모리 절약)
-            currentPp: moveData.pp,    // 현재 PP 초기화
-            maxPp: moveData.pp         // 최대 PP 설정
+            def: originalMove,          // 1. 정적 데이터는 참조만 (가볍게)
+            currentPp: originalMove.pp,
+            maxPp: originalMove.pp,
+            
+            // 2. ★ 가변 데이터는 '깊은 복사' 수행!
+            volatileData: originalMove.volatileDataTemplate 
+            ? structuredClone(originalMove.volatileDataTemplate) // 깊은 복사 (Node v17+)
+            : undefined
+            
         };
 
         this.moves.push(newInstance);

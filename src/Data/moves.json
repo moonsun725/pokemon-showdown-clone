@@ -36,6 +36,19 @@
       },
         "isContact": true
     },
-    { "name": "베놈쇼크", "power": 65, "type": "Poison", "accuracy": 100, "category": "Physical", "PP": 10, "effect": "VenomShock" }
+    { "name": "베놈쇼크", "power": 65, "type": "Poison", "accuracy": 100, "category": "Physical", "PP": 10, "effect": "VenomShock" },
+    { "name":"플레어드라이브", "power":120, "type": "Fire", "accuracy": 100, "category": "Physical", "PP": 15, 
+      "effects":[
+        {
+          "type": "Recoil",
+          "chance": 100, 
+          "data": { "ratio": 0.33 } 
+        },
+        {
+          "type": "BRN",
+          "chance": 10 
+        }
+      ]
+    }
   ]
 }

@@ -284,7 +284,7 @@ export class GameRoom {
                     player: p1, 
                     moveIndex: act1.index, 
                     speed: p1.activePokemon.speed, // (임시) 현재 스피드
-                    priority: move.priority || 0 
+                    priority: move.def.priority || 0 
                 });
             }
         }
@@ -296,7 +296,7 @@ export class GameRoom {
                     player: p2, 
                     moveIndex: act2.index, 
                     speed: p2.activePokemon.speed, 
-                    priority: move.priority || 0 
+                    priority: move.def.priority || 0 
                 });
             }
         }

@@ -11,42 +11,63 @@ export interface MoveAbility {
     OnUse(user: Pokemon, move: Move): void;
     
     // 기술이 명중했을 때 발동 (주로 피격자 대상)
-    OnHit(target: Pokemon, move: Move, user: Pokemon): void;
-    OnEndMove(user: Pokemon, move: Move): void;
+    OnHit(target: Pokemon, move: Move, user: Pokemon, damage: number): void;
+    OnAfterAttack(user: Pokemon, move: Move): void;
 }
 
 // 기본값 (Null Object Pattern) - 구현하지 않은 메서드는 아무 일도 안 함
 const DefaultAbility: MoveAbility = {
     OnUse: () => {},
     OnHit: () => {},
-    OnEndMove: () => {}
+    OnAfterAttack: () => {}
 };
 
 // =========================================================
 // 메인 실행 함수 (Dispatcher)
 // =========================================================
-export function ApplyEffect(move: Move, target: Pokemon, user: Pokemon, trigger: EffectTrigger): void {
+// src/Game/Ability/moveAbility.ts
+
+export function ProcessMoveEffects(
+    move: Move, 
+    defender: Pokemon, // target (맞는 쪽)
+    attacker: Pokemon, // user (쓰는 쪽)
+    currentTiming: EffectTrigger, // 현재 시점 ('OnUse' or 'OnHit')
+    damage: number = 0
+): void {
     
-    // 1. 기술에 효과(effect)가 정의되어 있는지 확인
-    if (!move.effect) return;
+    if (!move.effects) return;
 
-    // 2. 확률 체크 (OnUse는 보통 100%지만, 데이터에 chance가 있다면 반영)
-    // chance가 undefined면 100%로 간주
-    const chance = move.chance ?? 100;
-    if (Math.random() * 100 > chance) return;
+    for (const entry of move.effects) {
+        
+        // 1. [필터링] 타이밍 체크
+        // JSON에 타이밍이 적혀있는데, 지금 시점과 다르면 스킵!
+        // (타이밍이 안 적혀있으면 '항상 발동'으로 간주하거나, 기본값 설정)
+        const entryTiming = entry.timing || 'OnHit'; // 기본값은 상황에 따라
+        if (entryTiming !== currentTiming) continue;
 
-    // 3. 레지스트리에서 해당 효과의 로직 가져오기
-    const logic = AbilityRegistry[move.effect];
+        // 2. 확률 체크
+        const chance = entry.chance ?? 100;
+        if (Math.random() * 100 > chance) continue;
 
-    if (logic) {
-        // 4. Trigger(타이밍)에 맞는 메서드 실행
-        if (trigger === 'OnUse') {
-            logic.OnUse(user, move);
-        } else if (trigger === 'OnHit') {
-            logic.OnHit(target, move, user);
+        // 3. [중요] 타겟 결정 (JSON 데이터 기반)
+        // entry.target이 'Self'면 attacker, 'Enemy'면 defender
+        // 기본값: OnUse는 Self, OnHit은 Enemy로 설정하면 편함
+        let actualTarget = defender; 
+        if (entry.target === 'Self') {
+            actualTarget = attacker;
+        } else if (entry.target === 'Enemy') {
+            actualTarget = defender;
+        } else {
+             // 타겟 명시가 없으면 타이밍에 따라 관례적으로 처리
+             actualTarget = (currentTiming === 'OnUse') ? attacker : defender;
         }
-    } else {
-        console.warn(`⚠️ [MoveAbility] 구현되지 않은 효과 스크립트: ${move.effect}`);
+
+        // 4. 로직 실행
+        const logic = AbilityRegistry[entry.type];
+        if (logic) {
+            // 이제 로직에게 "누구한테(actualTarget)" 할지만 알려주면 됨
+            logic.Execute(actualTarget, entry.data, damage); 
+        }
     }
 }
 
@@ -98,5 +119,14 @@ const AbilityRegistry: { [key: string]: MoveAbility } = {
                 });
             }
         }
+    
+    },
+
+    "Recoil": {
+        ...DefaultAbility, // 기본값 먼저 깔아두기
+        OnHit: (target: Pokemon, move: Move, user: Pokemon, damage: number) =>{
+            user.takeDamage(damage)
+        }
     }
+
 };

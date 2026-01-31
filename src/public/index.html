@@ -185,9 +185,21 @@
             }
 
             if (myMoves) {
-                myMoves.forEach((move, Moveindex) => {
+                myMoves.forEach((moveInst, Moveindex) => { 
+                    const name = moveInst.def.name; // 데이터에서 불러오기
+                    const pp = moveInst.currentPp; // 실제 객체에서 불러오기
+                    const maxPp = moveInst.maxPp;
+
                     const btn = document.createElement('button');
-                    btn.innerText = `${move.name}\n(${move.power})`;
+    
+                    // 버튼 텍스트에 PP 표시
+                    btn.innerText = `${name}\n(${pp}/${maxPp})`;
+    
+                    // PP 없으면 비활성화
+                    if (pp <= 0) {
+                        btn.disabled = true;
+                        btn.style.backgroundColor = "#ccc"; // 회색 처리
+                    }
                     btn.style.padding = '10px';
                     btn.style.marginRight = '5px';
                     btn.style.cursor = 'pointer';
