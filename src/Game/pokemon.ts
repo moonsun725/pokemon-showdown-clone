@@ -5,7 +5,7 @@ import getTypeEffectiveness from '../BattleSystem/typeChart.js';
 import type { Rank } from '../BattleSystem/Rank.js';
 import { RankToMultiplier, RankToMultiplierAccEv, RankToMultiplierCrit } from '../BattleSystem/Rank.js';
 import { calculateDamage } from '../BattleSystem/dmgCalc.js';
-import { ApplyEffect } from '../BattleSystem/moveAbility.js';
+import { ProcessMoveEffects } from '../BattleSystem/moveAbility.js';
 
 /*
 // 변수/함수 목록
@@ -60,7 +60,7 @@ export class Pokemon {
     public types: string[] = [];
     //26-01-17. 상태이상 추가
     public status: string | null = null; // 'PAR', 'BRN', 'PSN' 등
-
+    
     public Rank: Rank = {
         atk: 0, 
         def: 0, 
@@ -136,32 +136,34 @@ export class Pokemon {
 
     // 특정 기술로 공격하기
     useMove(moveIndex: number, target: Pokemon): void {
-        const move = this.moves[moveIndex]?.def;
-        if (!move) {
+        const moveInst = this.moves[moveIndex];
+        if (!moveInst) {
             console.log("[pokemon]: 잘못된 기술 선택입니다.");
             return;
         }
+        const move = moveInst.def;
+        
+        console.log(`[Battle] ${this.name}의 ${move.name}!`);
 
-        // 기술 사용만 해도 발동하도록(ex: 칼춤)
-        ApplyEffect(move, target, this, 'OnUse');
-
-        console.log(`[Battle] ${this.name}의 ${move.name} 공격!`);
+        // 기술 사용 시
+        ProcessMoveEffects(move, target, this, "OnUse");
+        // PP는 사용 시점에 소모
+        moveInst.currentPp--;
+        // 명중 여부
         if (!this.CheckAcuracy(move, target)) {
             console.log(`[pokemon]: 상대 ${target.name}에게는 맞지 않았다!`);
             return;
         }
 
-        // 변화기(Status) 처리: 데미지 계산 건너뛰기
-        if (move.category === 'Status') {
-            if (move.effect && move.chance) {
-                // 적에게 부가효과 적용
-                console.log("[pokemon]: 변화기 처리")
-                ApplyEffect(move, target, this, 'OnHit');
-            }   
-            return; 
+        // 적에게 사용하는 변화기
+        if (move.category === "Status")
+        {
+            console.log("[pokemon]: 변화기 처리");
+            ProcessMoveEffects(move, target, this, "OnHit");
         }
 
-        { // 데미지 계산
+        // 데미지 계산
+        { 
             let DMGRes = calculateDamage(this, target, move);
 
             let effectivenessMsg = "";
@@ -173,15 +175,9 @@ export class Pokemon {
             // 피해 적용
             target.takeDamage(DMGRes.damage);
             console.log(`[pokemon]:💥 ${target.name}은(는) ${DMGRes.damage}의 피해를 입었다! 남은 HP: ${target.hp}/${target.maxHp}`);
+            // 기술 적중시 부가효과
+            ProcessMoveEffects(move, target, this, "OnHit", DMGRes.damage);
         }
-
-        // 공격기의 경우, 부가효과 처리
-        if (move.effect && move.chance) {
-            console.log("[pokemon]: 부가효과 있음!");
-            ApplyEffect(move, target, this, 'OnHit');
-        }   
-
-        return;
     }
 
     modifyRank(stat: keyof Rank, amount: number): void {
@@ -201,6 +197,14 @@ export class Pokemon {
             this.hp = 0;
             this.status = "FNT";
         }
+    }
+
+    recoverHp(amount: number) :void
+    {
+        this.hp += amount;
+        if(this.hp > this.maxHp) 
+            this.hp = this.maxHp;
+        console.log(`[pokemon]/[recoverHp]: ${this.name}의 남은 HP: ${this.hp}`);
     }
 
     CheckAcuracy(move: Move, target: Pokemon): boolean {

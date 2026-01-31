@@ -12,7 +12,7 @@ export type EffectTiming = 'OnUse' | 'OnHit' | 'OnTurnEnd';
 export type EffectTarget = 'Self' | 'Enemy'; // 대상
 export interface MoveEffectEntry {
     type: string;       // 효과 이름 (예: "Recoil", "BRN")
-    event: EffectTiming; // 발동 타이밍(OnHit, OnTurnEnd)
+    timing: EffectTiming; // 발동 타이밍(OnHit, OnTurnEnd)
     target: EffectTarget;
 
     chance?: number;    // 개별 확률 (없으면 100%)
