@@ -6,7 +6,7 @@ import type { Rank } from '../BattleSystem/Rank.js';
 import { RankToMultiplier, RankToMultiplierAccEv, RankToMultiplierCrit } from '../BattleSystem/Rank.js';
 import { calculateDamage } from '../BattleSystem/dmgCalc.js';
 import { ProcessMoveEffects } from '../BattleSystem/moveAbility.js';
-
+import { type VolatileStatus } from '../BattleSystem/VolatileStatus.js';
 /*
 // 변수/함수 목록
 export class Pokemon {
@@ -60,6 +60,8 @@ export class Pokemon {
     public types: string[] = [];
     //26-01-17. 상태이상 추가
     public status: string | null = null; // 'PAR', 'BRN', 'PSN' 등
+    //26-02-01. 휘발성 효과 목록 추가
+    public volatileStatus: Map<string, VolatileStatus> = new Map();
     
     public Rank: Rank = {
         atk: 0, 
@@ -85,6 +87,7 @@ export class Pokemon {
         this.learnMove("플레어드라이브"); 
         this.learnMove("병상첨병"); 
         this.learnMove("객기");  
+        this.learnMove("자신을 공격하고 말았디!");
         /*
         this.learnMove(data_M.moves[0] as unknown as Move); // 10만볼트(기준확인)
         this.learnMove(data_M.moves[3] as unknown as Move); // 맹독
@@ -206,6 +209,30 @@ export class Pokemon {
         if(this.hp > this.maxHp) 
             this.hp = this.maxHp;
         console.log(`[pokemon]/[recoverHp]: ${this.name}의 남은 HP: ${this.hp}`);
+    }
+
+    addVolatile(statusId: string, status: VolatileStatus) {
+        if (this.volatileStatus.has(statusId)) {
+            console.log(`${this.name}에게 이미 ${statusId}가 있어 갱신합니다.`);
+        }
+        this.volatileStatus.set(statusId, status);
+        console.log(`✨ ${this.name}에게 [${statusId}] 상태가 부여됨!`);
+    }
+    
+    removeVolatile(statusId?: string) : void
+    {
+        if (statusId)
+            if (this.volatileStatus.delete(statusId)) {
+            console.log(`✨ ${this.name}은 [${statusId}] 상태로부터 풀려났다!`);
+        }
+        else
+        {
+            this.volatileStatus.clear(); // clearVolatile()의 역할도 한번에 할 수 있게 해도 될거같아
+        }
+    }
+
+    getVolatile(statusId: string): VolatileStatus | undefined {
+        return this.volatileStatus.get(statusId);
     }
 
     CheckAcuracy(move: Move, target: Pokemon): boolean {

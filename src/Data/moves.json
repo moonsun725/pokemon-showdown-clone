@@ -157,6 +157,21 @@
           "data": { "multiplier": 2.0 }
         } 
       ]
+    },
+    { "name": "자신을 공격하고 말았다!", "power": 40, "type": "None", "accuracy": null, "category": "Physical", "pp": null },
+    { "name": "씨뿌리기", "power": null, "type": "Grass", "accuracy": 90, "category": "Status", "pp": 10,
+      "effects": [
+        {
+          "type": "AddVolatile",
+          "timing": "OnHit",
+          "target": "Enemy",
+          "data": { 
+            "typeId" : "Leech",
+            "dutation": -1
+          }
+        }
+      ]
     }
+    
   ]
 }

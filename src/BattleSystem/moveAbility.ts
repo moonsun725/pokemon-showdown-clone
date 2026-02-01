@@ -1,13 +1,14 @@
 import { Pokemon } from '../Game/pokemon.js';
 import type { Move } from '../Game/Moves/move.js';
 import { TryApplyStatus } from './StatusSystem.js';
+import type { VolatileStatus } from './VolatileStatus.js';
 
 // 트리거 타입 정의: 언제 호출되었는가?
 export type EffectTrigger = 'OnUse' | 'OnHit' | 'OnBasePower';
 
 interface AbilityLogic {
     // 대부분의 경우 user, target을 구분해서 받지 않고, "적용 대상(target)" 하나만 받음
-    Execute(target: Pokemon, data: any, damage?: number): void;
+    Execute(target: Pokemon, data: any, damage?: number, source?: Pokemon): void;
     // 객기, 베놈쇼크: 한쪽만 검사 | 자이로볼, 히트스탬프: 쌍방 검사라 user랑 target 구분할 필요 있음
     GetPowerMultiplier?(target: Pokemon, user: Pokemon, data: any) : number;
 }
@@ -41,7 +42,7 @@ export function ProcessMoveEffects(
         const chance = entry.chance ?? 100;
         if (Math.random() * 100 > chance) continue;
 
-        // 3. [중요] 타겟 결정 (JSON 데이터 기반)
+        // 3. 타겟 결정 (JSON 데이터 기반)
         // entry.target이 'Self'면 attacker, 'Enemy'면 defender
         // 기본값: OnUse는 Self, OnHit은 Enemy로 설정하면 편함
         let actualTarget = defender; 
@@ -148,6 +149,17 @@ const AbilityRegistry: { [key: string]: AbilityLogic } = {
         }
     },
 
+    "AddVolatile": {
+        Execute: (target, data, damage, user) => {
+            const status: VolatileStatus = {
+                typeId: data.id,
+                source: user,
+                duration: data.duration,
+            };
+            target.addVolatile(data.id, status);
+        }
+    },
+
     // 반동 (반동은 무조건 '나'에게 데미지를 줌 -> JSON에서 target: "Self" 설정 필수)
     "Recoil": {
         Execute: (target, data, damage) => {
@@ -190,7 +202,4 @@ const AbilityRegistry: { [key: string]: AbilityLogic } = {
             return 1.0;
         }
     }
-
-    
-
 };
