@@ -7,7 +7,7 @@ export type EffectTrigger = 'OnUse' | 'OnHit';
 
 interface AbilityLogic {
     // 더 이상 user, target을 구분해서 받지 않고, "적용 대상(target)" 하나만 받음
-    Execute(target: Pokemon, data: any, damage?: number): void;
+    Execute(target: Pokemon, data: any, damage?: number): void | number;
 }
 
 // =========================================================
@@ -70,7 +70,6 @@ export function ProcessMoveEffects(
 const AbilityRegistry: { [key: string]: AbilityLogic } = {
 
     // 1. 상태이상 계열 (Status Effects)
-    // OnHit 타이밍에 StatusSystem을 호출하여 상태 부여 시도
     "PAR": { 
         Execute: (target) => {
             if (!target.types.includes("Electic")) 
@@ -91,12 +90,25 @@ const AbilityRegistry: { [key: string]: AbilityLogic } = {
     },
 
     // 2. 랭크 변화 (Stat Change)
-    // OnUse(내 버프)와 OnHit(상대 디버프)를 모두 처리하는 범용 로직
     "StatChange": {
         Execute: (target, data) => {
-            // data가 { stat: 'atk', value: -1 } 형태로 들어옴
-            target.modifyRank(data.stat, data.value);
-            console.log(`📊 ${target.name}의 ${data.stat} ${data.value}랭크 변화!`);
+            // 1. 데이터가 없으면 리턴
+            if (!data) return;
+
+            // 2. ★ 배열인지 확인 (껍질깨기 같은 경우)
+            if (Array.isArray(data)) {
+                // 배열이면 내부를 돌면서 하나씩 적용
+                data.forEach(item => {
+                    target.modifyRank(item.stat, item.value);
+                    console.log(`📊 ${target.name}의 ${item.stat} ${item.value}랭크 변화!`);
+                });
+            } 
+            // 3. ★ 단일 객체인지 확인 (울음소리 같은 경우)
+            else {
+                // 배열이 아니면 그냥 바로 적용
+                target.modifyRank(data.stat, data.value);
+                console.log(`📊 ${target.name}의 ${data.stat} ${data.value}랭크 변화!`);
+            }
         }
     },
 
@@ -122,6 +134,15 @@ const AbilityRegistry: { [key: string]: AbilityLogic } = {
         Execute: (target, data) => {
             const ratio = data?.recoverRate || 0;
             target.recoverHp(Math.floor(target.maxHp * ratio));
+        }
+    },
+
+    "StateCheck": { // 객기, 병상첨병, 베놈쇼크, 근성(특성)
+        Execute: (target, data) => {
+            const stateType = data?.targetState || "every";
+            const multiplier = data?.multiplier || 0;
+            if ((!target.status && stateType === "every" ) || target.status === stateType)
+                return multiplier;
         }
     }
 
