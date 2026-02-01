@@ -64,9 +64,9 @@ export class Pokemon {
     public Rank: Rank = {
         atk: 0, 
         def: 0, 
+        spa: 0,
         spd: 0,
-        satk: 0,
-        sdef: 0,
+        spe: 0,
         acc: 0,
         eva: 0,
         crit: 0
@@ -81,10 +81,10 @@ export class Pokemon {
         this.speed = speed || 10; // 기본값 처리
         this.types = types; 
         
-        this.learnMove("10만볼트"); // 10만볼트(기준확인)
-        this.learnMove("맹독"); // 맹독
-        this.learnMove("전광석화"); // 전광석화
-        this.learnMove("칼춤"); // 칼춤 
+        this.learnMove("독가스"); 
+        this.learnMove("플레어드라이브"); 
+        this.learnMove("병상첨병"); 
+        this.learnMove("객기");  
         /*
         this.learnMove(data_M.moves[0] as unknown as Move); // 10만볼트(기준확인)
         this.learnMove(data_M.moves[3] as unknown as Move); // 맹독
@@ -160,6 +160,7 @@ export class Pokemon {
         {
             console.log("[pokemon]: 변화기 처리");
             ProcessMoveEffects(move, target, this, "OnHit");
+            return;
         }
 
         // 데미지 계산
@@ -229,7 +230,7 @@ export class Pokemon {
                     
         // (3) 랭크 초기화 (새 객체 할당이 가장 깔끔함)
         this.Rank = {
-            atk: 0, def: 0, spd: 0, satk: 0, sdef: 0,
+            atk: 0, def: 0, spa: 0, spd: 0, spe: 0,
             acc: 0, eva: 0, crit: 0 // pokemon.Rank.atk = 0; 이런식으로 해도 되긴하네
         }
     }

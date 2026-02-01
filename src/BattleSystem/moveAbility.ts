@@ -3,11 +3,13 @@ import type { Move } from '../Game/Moves/move.js';
 import { TryApplyStatus } from './StatusSystem.js';
 
 // 트리거 타입 정의: 언제 호출되었는가?
-export type EffectTrigger = 'OnUse' | 'OnHit';
+export type EffectTrigger = 'OnUse' | 'OnHit' | 'OnBasePower';
 
 interface AbilityLogic {
-    // 더 이상 user, target을 구분해서 받지 않고, "적용 대상(target)" 하나만 받음
-    Execute(target: Pokemon, data: any, damage?: number): void | number;
+    // 대부분의 경우 user, target을 구분해서 받지 않고, "적용 대상(target)" 하나만 받음
+    Execute(target: Pokemon, data: any, damage?: number): void;
+    // 객기, 베놈쇼크: 한쪽만 검사 | 자이로볼, 히트스탬프: 쌍방 검사라 user랑 target 구분할 필요 있음
+    GetPowerMultiplier?(target: Pokemon, user: Pokemon, data: any) : number;
 }
 
 // =========================================================
@@ -63,6 +65,40 @@ export function ProcessMoveEffects(
 }
 
 // =========================================================
+// 위력 보정 전용 함수 (number 반환)
+// =========================================================
+export function GetPowerMultiplier(
+    move: Move, 
+    target: Pokemon, 
+    user: Pokemon
+): number {
+    let multiplier = 1.0;
+    
+    if (!move.effects) return multiplier;
+
+    for (const entry of move.effects) {
+        // 타이밍이 OnBasePower인 것만 찾음
+        if (entry.timing !== 'OnBasePower') continue;
+
+        const logic = AbilityRegistry[entry.type];
+        // 해당 로직에 GetPowerMultiplier 메서드가 있으면 실행
+        if (logic && logic.GetPowerMultiplier) {
+
+            let subject = target; // 기본적으로는 target
+            if (entry.target === 'Self') {
+                subject = user;
+            }
+
+            // ★ 여기서 user와 target을 둘 다 넘겨줌
+            const result = logic.GetPowerMultiplier(subject, user, entry.data);
+            multiplier *= result;
+        }
+    }
+    return multiplier;
+}
+
+
+// =========================================================
 // 레지스트리 (Registry)
 // 기술의 effect(문자열)와 실제 로직을 매핑
 // =========================================================
@@ -72,7 +108,7 @@ const AbilityRegistry: { [key: string]: AbilityLogic } = {
     // 1. 상태이상 계열 (Status Effects)
     "PAR": { 
         Execute: (target) => {
-            if (!target.types.includes("Electic")) 
+            if (!target.types.includes("Electric")) 
                 TryApplyStatus(target, "BRN");
         }
     },
@@ -84,7 +120,7 @@ const AbilityRegistry: { [key: string]: AbilityLogic } = {
     },
     "PSN": {
         Execute: (target) => {
-            if (!target.types.includes("Poison") && target.types.includes("Steel")) 
+            if (!target.types.includes("Poison") && !target.types.includes("Steel")) 
                 TryApplyStatus(target, "PSN");
         }
     },
@@ -117,7 +153,11 @@ const AbilityRegistry: { [key: string]: AbilityLogic } = {
         Execute: (target, data, damage) => {
             const ratio = data?.recoilRate || 0;
             if (damage && damage > 0) 
+            {
+                console.log("[moveAbility]/[Recoil]: 반동으로 피해를 입었다!");
                 target.takeDamage(Math.floor(damage * ratio));
+            } 
+                
             
         }
     },
@@ -138,12 +178,19 @@ const AbilityRegistry: { [key: string]: AbilityLogic } = {
     },
 
     "StateCheck": { // 객기, 병상첨병, 베놈쇼크, 근성(특성)
-        Execute: (target, data) => {
+        Execute: () => {},
+        GetPowerMultiplier : (target, _, data) => {
             const stateType = data?.targetState || "every";
-            const multiplier = data?.multiplier || 0;
-            if ((!target.status && stateType === "every" ) || target.status === stateType)
+            const multiplier = data?.multiplier || 1.0;
+            if ((target.status !== null && stateType === "every" ) || target.status === stateType)
+            {
+                console.log(`[moveAbility]/[StateCheck]: 기술 위력 ${multiplier}배 적용!`);
                 return multiplier;
+            }
+            return 1.0;
         }
     }
+
+    
 
 };

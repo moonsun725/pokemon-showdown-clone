@@ -8,7 +8,7 @@ export interface MoveMetadata {
 }
 */
 
-export type EffectTiming = 'OnUse' | 'OnHit' | 'OnTurnEnd';
+export type EffectTiming = 'OnUse' | 'OnHit' | 'OnTurnEnd' | 'OnBasePower';
 export type EffectTarget = 'Self' | 'Enemy'; // 대상
 export interface MoveEffectEntry {
     type: string;       // 효과 이름 (예: "Recoil", "BRN")

@@ -1,9 +1,9 @@
 export interface Rank{
     atk: number; // 당장은 공격 수치만 쓸거야
     def: number;
+    spa: number;
     spd: number;
-    satk: number;
-    sdef: number;
+    spe: number;
 
     acc: number;
     eva: number;

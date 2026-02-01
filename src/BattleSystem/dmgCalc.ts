@@ -2,6 +2,7 @@
 import { Pokemon } from '../Game/pokemon.js';
 // Move 인터페이스가 pokemon.ts에 export 되어 있다고 가정 (안 되어 있으면 추가 필요)
 import type { Move } from '../Game/Moves/move.js'; 
+import { GetPowerMultiplier } from './moveAbility.js';
 import getTypeEffectiveness from './typeChart.js';
 import { RankToMultiplier } from './Rank.js';
 
@@ -13,8 +14,11 @@ interface DamageResult {
 
 export function calculateDamage(attacker: Pokemon, defender: Pokemon, move: Move): DamageResult {
     
-    let baseDamage = 1.0;
+    let basePower = move.power!;
+    const powerModifier = GetPowerMultiplier(move, defender, attacker); 
+    basePower *= powerModifier;
     let isCritical =  false;
+
 
     let Tmultiplier = 1.0;
         defender.types.forEach((defType) => {
@@ -36,7 +40,7 @@ export function calculateDamage(attacker: Pokemon, defender: Pokemon, move: Move
 
         // 데미지 계산
         
-        baseDamage = Math.floor(move.power! * realAtk / realDef / 50); // 어차피 usemove에서 다 검증하고 보내주니까 power는 null일 수가 없다고 내가 말해줘야지...
+        let baseDamage = Math.floor(basePower! * realAtk / realDef / 50); // 어차피 usemove에서 다 검증하고 보내주니까 power는 null일 수가 없다고 내가 말해줘야지...
         console.log(`[DamageCalc]: 기본 데미지 (보정 전): ${baseDamage}`);
         baseDamage = Math.floor(baseDamage * Tmultiplier); // ★ 상성에 따른 배율 적용
         baseDamage = Math.floor(baseDamage * STAB); // ★ 자속 보정 적용
