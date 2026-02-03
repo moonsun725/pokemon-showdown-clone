@@ -1,10 +1,10 @@
 // room.ts
 import { Server } from 'socket.io';
-import { Player } from '../Game/Player.js';
-import { Pokemon, createPokemon,} from './pokemon.js';
-import type { Move } from './Moves/move.js';
-import { ResolveStatusEffects } from '../BattleSystem/StatusSystem.js';
-import { VolatileRegistry } from '../BattleSystem/VolatileStatus.js';
+import { Player } from './Player.js';
+import { Pokemon, createPokemon,} from '../00_Pokemon/pokemon.js';
+import type { Move } from '../01_Moves/move.js';
+import { ResolveStatusEffects } from '../03_BattleSystem/StatusSystem.js';
+import { VolatileRegistry } from '../03_BattleSystem/VolatileStatus.js';
 
 /*
 
@@ -362,21 +362,25 @@ export class GameRoom {
             
         for (const active of activePoke)
         {
-            ResolveStatusEffects(active.player.activePokemon);
-            for (const [id, status] of active.player.activePokemon.volatileStatus) {
-                const logic = VolatileRegistry[id];
-                if (logic && logic.OnTurnEnd) {
-                    logic.OnTurnEnd(active.player.activePokemon, status.data);
-                }
+
+            /* 실제 순서
+                날씨 (모래바람/싸라기눈)
+
+                기술 효과 (설치형 기술 등)
+
+                아이템 (먹다남은음식 / 검은진흙)
+
+                가변 상태 (씨뿌리기 / 아쿠아링) ← volatileList
+
+                상태 이상 (독 / 화상) ← ResolveStatusEffects
+            */ 
             
-                // duration 감소 처리도 여기서 공통으로 하면 좋음
-                if (status.duration > 0) {
-                    status.duration--;
-                    if (status.duration === 0) active.player.activePokemon.removeVolatile(id);
-                }
-            }
+            active.player.activePokemon.volatileList.UpdateTurn();
+            if (active.player.activePokemon.hp <= 0) continue;
+            ResolveStatusEffects(active.player.activePokemon);
+            if (active.player.activePokemon.hp <= 0) continue;
         }
-        // 상태이상 데미지
+        
         
 
         // 행동 초기화

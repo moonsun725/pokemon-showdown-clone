@@ -1,50 +1,11 @@
 import data_P from '../Data/pokedex.json' with { type: 'json' };
-import type { Move, MoveInstance } from './Moves/move.js';
-import { GetMove } from './Moves/MoveManager.js';
-import getTypeEffectiveness from '../BattleSystem/typeChart.js';
-import type { Rank } from '../BattleSystem/Rank.js';
-import { RankToMultiplier, RankToMultiplierAccEv, RankToMultiplierCrit } from '../BattleSystem/Rank.js';
-import { calculateDamage } from '../BattleSystem/dmgCalc.js';
-import { ProcessMoveEffects } from '../BattleSystem/moveAbility.js';
-import { type VolatileStatus, VolatileRegistry } from '../BattleSystem/VolatileStatus.js';
-/*
-// 변수/함수 목록
-export class Pokemon {
-    public name: string;
-    public hp: number;
-    public maxHp: number;
-    public atk: number;
-    public speed: number;
-
-    public moves: Move[] = [];
-    public types: string[] = [];
-
-    public status: string | null = null; 
-
-    public Rank: Rank = {
-        atk: 0, 
-        def: 0, 
-        spd: 0,
-        satk: 0,
-        sdef: 0,
-        acc: 0,
-        eva: 0,
-        crit: 0
-    }
-
-    constructor(name: string, hp: number, atk: number, speed: number, types: string[]) 
-    
-    showCurrent() : void
-    learnMove(move: Move) : void
-    useMove(moveIndex: number, target: Pokemon,)'modifyRank(stat: keyof Rank, amount: number) : void
-    modifyRank(stat: keyof Rank, amount: number): void 
-    takeDamage(amount: number): void
-    CheckAcuracy(move: Move, target: Pokemon): boolean
-    ResetCondition(): void
-}
-
-export function createPokemon(name: string): Pokemon
-*/
+import type { Move, MoveInstance } from '../01_Moves/move.js';
+import { GetMove } from '../01_Moves/MoveManager.js';
+import type { Rank } from '../03_BattleSystem/Rank.js';
+import { RankToMultiplier, RankToMultiplierAccEv, RankToMultiplierCrit } from '../03_BattleSystem/Rank.js';
+import { calculateDamage } from '../03_BattleSystem/dmgCalc.js';
+import { ProcessMoveEffects } from '../03_BattleSystem/moveAbility.js';
+import { VolatileStatusManager } from './volatileStatusManager.js';
 
 export class Pokemon {
     public name: string;
@@ -61,7 +22,7 @@ export class Pokemon {
     //26-01-17. 상태이상 추가
     public status: string | null = null; // 'PAR', 'BRN', 'PSN' 등
     //26-02-01. 휘발성 효과 목록 추가
-    public volatileStatus: Map<string, VolatileStatus> = new Map();
+    public volatileList = new VolatileStatusManager(this);
     
     public Rank: Rank = {
         atk: 0, 
@@ -88,12 +49,6 @@ export class Pokemon {
         this.learnMove("병상첨병"); 
         this.learnMove("객기");  
         this.learnMove("자신을 공격하고 말았디!");
-        /*
-        this.learnMove(data_M.moves[0] as unknown as Move); // 10만볼트(기준확인)
-        this.learnMove(data_M.moves[3] as unknown as Move); // 맹독
-        this.learnMove(data_M.moves[4] as unknown as Move); // 전광석화
-        this.learnMove(data_M.moves[5] as unknown as Move); // 칼춤
-        */
     }
 
     // 상태 확인 메서드
@@ -209,38 +164,6 @@ export class Pokemon {
         if(this.hp > this.maxHp) 
             this.hp = this.maxHp;
         console.log(`[pokemon]/[recoverHp]: ${this.name}의 남은 HP: ${this.hp}`);
-    }
-
-    addVolatile(statusId: string, status: VolatileStatus) {
-        if (this.volatileStatus.has(statusId)) {
-            console.log(`${this.name}는 이미 ${statusId}가 걸려 있다`);
-            return;
-        }
-        
-        // ★ [핵심] 등록하기 전에 Init 호출!
-        const logic = VolatileRegistry[statusId];
-        if (logic && logic.Init) {
-            // status 객체를 넘겨줘서 duration 등을 수정하게 함
-            logic.Init(status, status.data);
-        }
-        this.volatileStatus.set(statusId, status);
-        console.log(`✨ ${this.name}에게 [${statusId}] 상태가 부여됨!`);
-    }
-    
-    removeVolatile(statusId?: string) : void
-    {
-        if (statusId)
-            if (this.volatileStatus.delete(statusId)) {
-            console.log(`✨ ${this.name}은 [${statusId}] 상태로부터 풀려났다!`);
-        }
-        else
-        {
-            this.volatileStatus.clear(); // clearVolatile()의 역할도 한번에 할 수 있게 해도 될거같아
-        }
-    }
-
-    getVolatile(statusId: string): VolatileStatus | undefined {
-        return this.volatileStatus.get(statusId);
     }
 
     CheckAcuracy(move: Move, target: Pokemon): boolean {

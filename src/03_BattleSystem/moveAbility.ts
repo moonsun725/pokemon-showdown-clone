@@ -1,5 +1,5 @@
-import { Pokemon } from '../Game/pokemon.js';
-import type { Move } from '../Game/Moves/move.js';
+import { Pokemon } from '../00_Pokemon/pokemon.js';
+import type { Move } from '../01_Moves/move.js';
 import { TryApplyStatus } from './StatusSystem.js';
 import type { VolatileStatus } from './VolatileStatus.js';
 

@@ -4,9 +4,9 @@ import { createServer } from 'http';
 import { Server } from 'socket.io';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { GameRoom } from './Game/room.js'; 
-import type { BattleAction } from './Game/room.js';
-import { LoadMoves } from './Game/Moves/MoveManager.js';
+import { GameRoom } from './02_Game/room.js'; 
+import type { BattleAction } from './02_Game/room.js';
+import { LoadMoves } from './01_Moves/MoveManager.js';
 LoadMoves(); // 위치 상관없다니까...?
 
 const __filename = fileURLToPath(import.meta.url);

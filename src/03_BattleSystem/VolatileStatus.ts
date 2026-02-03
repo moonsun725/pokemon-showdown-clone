@@ -1,5 +1,5 @@
-import { Pokemon } from '../Game/pokemon.js';
-import { type Move } from '../Game/Moves/move.js';
+import { Pokemon } from '../00_Pokemon/pokemon.js';
+import { type Move } from '../01_Moves/move.js';
 
 
 export interface VolatileStatus {
@@ -44,7 +44,7 @@ export const VolatileRegistry: { [key: string]: VolatileLogic } = {
         OnBeforeMove: (pokemon) => {
             console.log(`😫 ${pokemon.name}는 풀죽어서 움직일 수 없다!`);
             // 풀죽음은 1턴만 지속되므로 여기서 바로 지워줘도 됨 (혹은 duration 관리)
-            pokemon.removeVolatile("Flinch"); 
+            pokemon.volatileList.Remove("Flinch"); 
             return false; // 행동 불가!
         }
     },
