@@ -6,7 +6,7 @@ import type { Rank } from '../BattleSystem/Rank.js';
 import { RankToMultiplier, RankToMultiplierAccEv, RankToMultiplierCrit } from '../BattleSystem/Rank.js';
 import { calculateDamage } from '../BattleSystem/dmgCalc.js';
 import { ProcessMoveEffects } from '../BattleSystem/moveAbility.js';
-import { type VolatileStatus } from '../BattleSystem/VolatileStatus.js';
+import { type VolatileStatus, VolatileRegistry } from '../BattleSystem/VolatileStatus.js';
 /*
 // 변수/함수 목록
 export class Pokemon {
@@ -213,7 +213,15 @@ export class Pokemon {
 
     addVolatile(statusId: string, status: VolatileStatus) {
         if (this.volatileStatus.has(statusId)) {
-            console.log(`${this.name}에게 이미 ${statusId}가 있어 갱신합니다.`);
+            console.log(`${this.name}는 이미 ${statusId}가 걸려 있다`);
+            return;
+        }
+        
+        // ★ [핵심] 등록하기 전에 Init 호출!
+        const logic = VolatileRegistry[statusId];
+        if (logic && logic.Init) {
+            // status 객체를 넘겨줘서 duration 등을 수정하게 함
+            logic.Init(status, status.data);
         }
         this.volatileStatus.set(statusId, status);
         console.log(`✨ ${this.name}에게 [${statusId}] 상태가 부여됨!`);

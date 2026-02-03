@@ -2,8 +2,6 @@ import { Pokemon } from '../Game/pokemon.js';
 import { type Move } from '../Game/Moves/move.js';
 
 
-export type EffectTrigger = 'OnUse' | 'OnHit' | '';
-
 export interface VolatileStatus {
     typeId: string;       // 상태 ID (예: "LeechSeed", "Confusion", "Flinch")
     source?: Pokemon | undefined;   // 시전자 (씨뿌리기 회복 대상 등을 위해 필요)
@@ -14,6 +12,8 @@ export interface VolatileStatus {
 }
 
 export interface VolatileLogic {
+    // 효과 부여 시점
+    Init?(status: VolatileStatus, data?: any): void
     // 턴 시작 전 행동 불능 체크 (풀죽음, 혼란, 잠듦 등)
     OnBeforeMove?(pokemon: Pokemon, volatileData: any): boolean; 
     
@@ -35,7 +35,7 @@ export const VolatileRegistry: { [key: string]: VolatileLogic } = {
             const drain = Math.floor(pokemon.maxHp / 8);
             pokemon.takeDamage(drain);
             source.recoverHp(drain);
-            console.log(`🌿 쪽쪽! ${pokemon.name}의 체력을 흡수했다!`);
+            console.log(`🌿 ${pokemon.name}의 체력을 흡수했다!`);
         }
     },
 
@@ -51,6 +51,10 @@ export const VolatileRegistry: { [key: string]: VolatileLogic } = {
 
     // 3. 혼란 (Confusion)
     "Confusion": {
+        Init: (status, data) =>{
+            const wakeTurn = Math.floor(Math.random() * (data.duration)) + 1;
+            status.duration = wakeTurn;
+        },
         OnBeforeMove: (pokemon, data) => {
             console.log(`🌀 ${pokemon.name}는 혼란에 빠져 있다!`);
             
@@ -61,6 +65,7 @@ export const VolatileRegistry: { [key: string]: VolatileLogic } = {
                 return false; // 행동 불가
             }
             return true; // 행동 가능
-        }
+        },
     }
+
 };

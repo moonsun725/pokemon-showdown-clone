@@ -4,6 +4,7 @@ import { Player } from '../Game/Player.js';
 import { Pokemon, createPokemon,} from './pokemon.js';
 import type { Move } from './Moves/move.js';
 import { ResolveStatusEffects } from '../BattleSystem/StatusSystem.js';
+import { VolatileRegistry } from '../BattleSystem/VolatileStatus.js';
 
 /*
 
@@ -347,9 +348,36 @@ export class GameRoom {
         console.log(`[room.ts]/[endTurn]: 턴 종료 처리 시작`);
         if (!this.p1 || !this.p2) return;
 
+        let activePoke: { player: any, speed: number }[] = [];
+        activePoke.push({player: this.p1, speed: this.p1.activePokemon.speed});
+        activePoke.push({player: this.p2, speed: this.p2.activePokemon.speed});
+
+        activePoke.sort((a,b)=>{
+            if(a.speed !== b.speed)
+            {
+                return b.speed-a.speed;
+            }
+            return Math.random() - 0.5; 
+        });
+            
+        for (const active of activePoke)
+        {
+            ResolveStatusEffects(active.player.activePokemon);
+            for (const [id, status] of active.player.activePokemon.volatileStatus) {
+                const logic = VolatileRegistry[id];
+                if (logic && logic.OnTurnEnd) {
+                    logic.OnTurnEnd(active.player.activePokemon, status.data);
+                }
+            
+                // duration 감소 처리도 여기서 공통으로 하면 좋음
+                if (status.duration > 0) {
+                    status.duration--;
+                    if (status.duration === 0) active.player.activePokemon.removeVolatile(id);
+                }
+            }
+        }
         // 상태이상 데미지
-        ResolveStatusEffects(this.p1.activePokemon);
-        ResolveStatusEffects(this.p2.activePokemon); // (오타 주의: p2여야 함) -> ResolveStatusEffects(this.p2.activePokemon);
+        
 
         // 행동 초기화
         this.p1Action = null;
