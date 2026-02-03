@@ -1,48 +1,34 @@
-import data_P from '../Data/pokedex.json' with { type: 'json' };
+import data_P from '../05_Data/pokedex.json' with { type: 'json' };
 import type { Move, MoveInstance } from '../01_Moves/move.js';
 import { GetMove } from '../01_Moves/MoveManager.js';
 import type { Rank } from '../03_BattleSystem/Rank.js';
 import { RankToMultiplier, RankToMultiplierAccEv, RankToMultiplierCrit } from '../03_BattleSystem/Rank.js';
 import { calculateDamage } from '../03_BattleSystem/dmgCalc.js';
 import { ProcessMoveEffects } from '../03_BattleSystem/moveAbility.js';
+
 import { VolatileStatusManager } from './volatileStatusManager.js';
+import { StatsManager, type IPokemonData } from './statManager.js';
+import { BattleStateManager } from './battlestateManager.js';
+import { RankManager } from './rankManager.js';
 
 export class Pokemon {
     public name: string;
-    public hp: number;
-    public maxHp: number;
-    public atk: number;
+    
+    public Stats: StatsManager; // 각종 수치들 다 여기로 몰았음
+    public BattleState: BattleStateManager; // 전투상태(주요 상태이상) 관리
+    public Rank: RankManager;
+    public volatileList; // 휘발성 상태이상 관리
+
     // 2. 기술 배열 추가 (C++의 std::vector<Move> 느낌)
     public moves: MoveInstance[] = [];
 
-    // 26-01-15. 스피드 항목 추가
-    public speed: number;
-    // 26-01-15. 타입 항목 추가
-    public types: string[] = [];
-    //26-01-17. 상태이상 추가
-    public status: string | null = null; // 'PAR', 'BRN', 'PSN' 등
-    //26-02-01. 휘발성 효과 목록 추가
-    public volatileList = new VolatileStatusManager(this);
-    
-    public Rank: Rank = {
-        atk: 0, 
-        def: 0, 
-        spa: 0,
-        spd: 0,
-        spe: 0,
-        acc: 0,
-        eva: 0,
-        crit: 0
-    }
-
-    constructor(name: string, hp: number, atk: number, speed: number, types: string[]) 
+    constructor(name: string, data: IPokemonData) 
     {
         this.name = name;
-        this.hp = hp;
-        this.maxHp = hp;
-        this.atk = atk;
-        this.speed = speed || 10; // 기본값 처리
-        this.types = types; 
+        this.Stats = new StatsManager(data, this);
+        this.BattleState = new BattleStateManager(this);
+        this.volatileList = new VolatileStatusManager(this);
+        this.Rank = new RankManager(this);
         
         this.learnMove("독가스"); 
         this.learnMove("플레어드라이브"); 
@@ -53,7 +39,7 @@ export class Pokemon {
 
     // 상태 확인 메서드
     showCurrent(): void{
-        console.log(`이름: ${this.name}, 체력: ${this.hp}, 공격 종족값: ${this.atk}`);
+        console.log(`이름: ${this.name}, 체력: ${this.Stats.hp}, 공격 종족값: ${this.Stats.atk}`);
         this.moves.forEach(element => {
             if (element == null){
                 throw new Error('[pokemon]:더 이상 배운 기술이 없습니다!');
@@ -132,38 +118,11 @@ export class Pokemon {
             console.log(`${effectivenessMsg}`);
 
             // 피해 적용
-            target.takeDamage(DMGRes.damage);
-            console.log(`[pokemon]:💥 ${target.name}은(는) ${DMGRes.damage}의 피해를 입었다! 남은 HP: ${target.hp}/${target.maxHp}`);
+            target.Stats.takeDamage(DMGRes.damage);
+            console.log(`[pokemon]:💥 ${target.name}은(는) ${DMGRes.damage}의 피해를 입었다! 남은 HP: ${target.Stats.hp}/${target.Stats.maxHp}`);
             // 기술 적중시 부가효과
             ProcessMoveEffects(move, target, this, "OnHit", DMGRes.damage);
         }
-    }
-
-    modifyRank(stat: keyof Rank, amount: number): void {
-        this.Rank[stat] += amount;
-        
-        // 작성하신 clamp 로직을 여기에 적용 (이미 잘 짜셨습니다!)
-        this.Rank[stat] = Math.max(-6, Math.min(6, this.Rank[stat]));
-        
-        console.log(`[pokemon]: ${this.name}의 ${stat} 랭크가 ${this.Rank[stat]}이 되었다!`);
-    }
-
-    takeDamage(amount: number): void {
-        this.hp -= amount;
-        console.log(`[pokemon]: ${this.name}의 남은 HP: ${this.hp}`);
-        if (this.hp <= 0)
-        {
-            this.hp = 0;
-            this.status = "FNT";
-        }
-    }
-
-    recoverHp(amount: number) :void
-    {
-        this.hp += amount;
-        if(this.hp > this.maxHp) 
-            this.hp = this.maxHp;
-        console.log(`[pokemon]/[recoverHp]: ${this.name}의 남은 HP: ${this.hp}`);
     }
 
     CheckAcuracy(move: Move, target: Pokemon): boolean {
@@ -174,23 +133,15 @@ export class Pokemon {
         else {
             // 명중률 계산 (간단한 예시)
             const random = Math.random() * 100;
-            return random < move.accuracy*(RankToMultiplierAccEv(this.Rank.acc-target.Rank.eva));
+            return random < move.accuracy*(RankToMultiplierAccEv(this.Rank.rank.acc-target.Rank.rank.eva));
         }
         
     }
 
     ResetCondition(): void {
-        // (1) 체력 회복
-        this.hp = this.maxHp;
-                
-        // (2) 상태이상 제거
-        this.status = null;
-                    
-        // (3) 랭크 초기화 (새 객체 할당이 가장 깔끔함)
-        this.Rank = {
-            atk: 0, def: 0, spa: 0, spd: 0, spe: 0,
-            acc: 0, eva: 0, crit: 0 // pokemon.Rank.atk = 0; 이런식으로 해도 되긴하네
-        }
+        this.Stats.reset();
+        this.BattleState.reset();
+        this.Rank.reset();
     }
 }
 
@@ -205,5 +156,5 @@ export function createPokemon(name: string): Pokemon {
     }
 
     // 2. 찾은 데이터로 객체 생성 및 반환
-    return new Pokemon(pData.name, pData.hp, pData.atk, pData.speed, pData.type);
+    return new Pokemon(pData.name, pData);
 }

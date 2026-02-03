@@ -32,8 +32,8 @@ export const VolatileRegistry: { [key: string]: VolatileLogic } = {
             const source = data.source; // 건 사람
             if (!source || source.hp <= 0) return;
 
-            const drain = Math.floor(pokemon.maxHp / 8);
-            pokemon.takeDamage(drain);
+            const drain = Math.floor(pokemon.Stats.maxHp / 8);
+            pokemon.Stats.takeDamage(drain);
             source.recoverHp(drain);
             console.log(`🌿 ${pokemon.name}의 체력을 흡수했다!`);
         }

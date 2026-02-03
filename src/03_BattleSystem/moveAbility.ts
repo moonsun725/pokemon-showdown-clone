@@ -109,19 +109,19 @@ const AbilityRegistry: { [key: string]: AbilityLogic } = {
     // 1. 상태이상 계열 (Status Effects)
     "PAR": { 
         Execute: (target) => {
-            if (!target.types.includes("Electric")) 
+            if (!target.Stats.types.includes("Electric")) 
                 TryApplyStatus(target, "BRN");
         }
     },
     "BRN": {
         Execute: (target) => {
-            if (!target.types.includes("Fire")) 
+            if (!target.Stats.types.includes("Fire")) 
                 TryApplyStatus(target, "BRN");
         }
     },
     "PSN": {
         Execute: (target) => {
-            if (!target.types.includes("Poison") && !target.types.includes("Steel")) 
+            if (!target.Stats.types.includes("Poison") && !target.Stats.types.includes("Steel")) 
                 TryApplyStatus(target, "PSN");
         }
     },
@@ -136,14 +136,14 @@ const AbilityRegistry: { [key: string]: AbilityLogic } = {
             if (Array.isArray(data)) {
                 // 배열이면 내부를 돌면서 하나씩 적용
                 data.forEach(item => {
-                    target.modifyRank(item.stat, item.value);
+                    target.Rank.modifyRank(item.stat, item.value);
                     console.log(`📊 ${target.name}의 ${item.stat} ${item.value}랭크 변화!`);
                 });
             } 
             // 3. ★ 단일 객체인지 확인 (울음소리 같은 경우)
             else {
                 // 배열이 아니면 그냥 바로 적용
-                target.modifyRank(data.stat, data.value);
+                target.Rank.modifyRank(data.stat, data.value);
                 console.log(`📊 ${target.name}의 ${data.stat} ${data.value}랭크 변화!`);
             }
         }
@@ -156,7 +156,7 @@ const AbilityRegistry: { [key: string]: AbilityLogic } = {
                 source: user,
                 duration: data.duration,
             };
-            target.addVolatile(data.id, status);
+            target.volatileList.Add(data.id, status);
         }
     },
 
@@ -167,7 +167,7 @@ const AbilityRegistry: { [key: string]: AbilityLogic } = {
             if (damage && damage > 0) 
             {
                 console.log("[moveAbility]/[Recoil]: 반동으로 피해를 입었다!");
-                target.takeDamage(Math.floor(damage * ratio));
+                target.Stats.takeDamage(Math.floor(damage * ratio));
             } 
                 
             
@@ -178,14 +178,14 @@ const AbilityRegistry: { [key: string]: AbilityLogic } = {
         Execute: (target, data, damage) => {
             const ratio = data?.drainRate || 0;
             if (damage && damage > 0) 
-                target.recoverHp(Math.floor(damage * ratio));
+                target.Stats.recoverHp(Math.floor(damage * ratio));
         }
     },
 
     "Recover": {
         Execute: (target, data) => {
             const ratio = data?.recoverRate || 0;
-            target.recoverHp(Math.floor(target.maxHp * ratio));
+            target.Stats.recoverHp(Math.floor(target.Stats.maxHp * ratio));
         }
     },
 
@@ -194,7 +194,7 @@ const AbilityRegistry: { [key: string]: AbilityLogic } = {
         GetPowerMultiplier : (target, _, data) => {
             const stateType = data?.targetState || "every";
             const multiplier = data?.multiplier || 1.0;
-            if ((target.status !== null && stateType === "every" ) || target.status === stateType)
+            if ((target.BattleState.status !== null && stateType === "every" ) || target.BattleState.status === stateType)
             {
                 console.log(`[moveAbility]/[StateCheck]: 기술 위력 ${multiplier}배 적용!`);
                 return multiplier;

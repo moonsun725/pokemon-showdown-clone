@@ -21,20 +21,20 @@ export function calculateDamage(attacker: Pokemon, defender: Pokemon, move: Move
 
 
     let Tmultiplier = 1.0;
-        defender.types.forEach((defType) => {
+        defender.Stats.types.forEach((defType) => {
             const eff = getTypeEffectiveness(move.type, defType);
             Tmultiplier *= eff;
         });
 
-        let Rmultiplier = RankToMultiplier(attacker.Rank.atk); // 공격 랭크 넣고 돌려
-        let realAtk = Math.floor(attacker.atk * Rmultiplier); // 공격자 보정치
-        console.log(`[DamageCalc]: 공격자 보정 공격력: ${realAtk} (원래: ${attacker.atk}, 랭크 배율: ${Rmultiplier})`);
+        let Rmultiplier = RankToMultiplier(attacker.Rank.rank.atk); // 공격 랭크 넣고 돌려
+        let realAtk = Math.floor(attacker.Stats.atk * Rmultiplier); // 공격자 보정치
+        console.log(`[DamageCalc]: 공격자 보정 공격력: ${realAtk} (원래: ${attacker.Stats.atk}, 랭크 배율: ${Rmultiplier})`);
 
         let realDef = 10; // 임시 초깃값
 
         // 자속보정
         let STAB = 1.0;
-        if (attacker.types.includes(move.type)) {
+        if (attacker.Stats.types.includes(move.type)) {
             STAB = 1.5; // 동일 타입 공격 보너스
         }
 
