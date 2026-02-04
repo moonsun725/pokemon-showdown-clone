@@ -37,10 +37,10 @@ export class StatsManager {
 
     // 데미지 받을 때 HP 처리 등도 여기서? 아니면 포켓몬 클래스에서?
     // 보통 HP 관리는 여기서 메서드로 제공하는 게 깔끔함
-    takeDamage(amount: number): boolean {
+    takeDamage(amount: number): void {
         this.hp -= amount;
         if (this.hp < 0) this.hp = 0;
-        return this.hp === 0; // 기절 여부 반환
+        this.owner.BattleState.Set("FNT");
     }
 
     recoverHp(amount: number) : void

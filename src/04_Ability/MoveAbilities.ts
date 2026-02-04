@@ -1,0 +1,114 @@
+import { Pokemon } from "../00_Pokemon/pokemon.js";
+import { TryApplyStatus } from "../03_BattleSystem/StatusSystem.js";
+import type { VolatileStatus } from '../03_BattleSystem/VolatileStatus.js';
+
+export interface AbilityLogic {
+    // 대부분의 경우 user, target을 구분해서 받지 않고, "적용 대상(target)" 하나만 받음
+    Execute(target: Pokemon, data: any, damage?: number, source?: Pokemon): void;
+    // 객기, 베놈쇼크: 한쪽만 검사 | 자이로볼, 히트스탬프: 쌍방 검사라 user랑 target 구분할 필요 있음
+    GetPowerMultiplier?(target: Pokemon, user: Pokemon, data: any) : number;
+}
+// =========================================================
+// 레지스트리 (Registry)
+// 기술의 effect(문자열)와 실제 로직을 매핑
+// =========================================================
+
+export const AbilityRegistry: { [key: string]: AbilityLogic } = {
+
+    // 1. 상태이상 계열 (Status Effects)
+    "PAR": { 
+        Execute: (target) => {
+            if (!target.Stats.types.includes("Electric")) 
+                TryApplyStatus(target, "BRN");
+        }
+    },
+    "BRN": {
+        Execute: (target) => {
+            if (!target.Stats.types.includes("Fire")) 
+                TryApplyStatus(target, "BRN");
+        }
+    },
+    "PSN": {
+        Execute: (target) => {
+            if (!target.Stats.types.includes("Poison") && !target.Stats.types.includes("Steel")) 
+                TryApplyStatus(target, "PSN");
+        }
+    },
+
+    // 2. 랭크 변화 (Stat Change)
+    "StatChange": {
+        Execute: (target, data) => {
+            // 1. 데이터가 없으면 리턴
+            if (!data) return;
+
+            // 2. ★ 배열인지 확인 (껍질깨기 같은 경우)
+            if (Array.isArray(data)) {
+                // 배열이면 내부를 돌면서 하나씩 적용
+                data.forEach(item => {
+                    target.Rank.modifyRank(item.stat, item.value);
+                    console.log(`📊 ${target.name}의 ${item.stat} ${item.value}랭크 변화!`);
+                });
+            } 
+            // 3. ★ 단일 객체인지 확인 (울음소리 같은 경우)
+            else {
+                // 배열이 아니면 그냥 바로 적용
+                target.Rank.modifyRank(data.stat, data.value);
+                console.log(`📊 ${target.name}의 ${data.stat} ${data.value}랭크 변화!`);
+            }
+        }
+    },
+
+    "AddVolatile": {
+        Execute: (target, data, damage, user) => {
+            const status: VolatileStatus = {
+                typeId: data.id,
+                source: user,
+                duration: data.duration,
+            };
+            target.volatileList.Add(data.id, status);
+        }
+    },
+
+    // 반동 (반동은 무조건 '나'에게 데미지를 줌 -> JSON에서 target: "Self" 설정 필수)
+    "Recoil": {
+        Execute: (target, data, damage) => {
+            const ratio = data?.recoilRate || 0;
+            if (damage && damage > 0) 
+            {
+                console.log("[moveAbility]/[Recoil]: 반동으로 피해를 입었다!");
+                target.Stats.takeDamage(Math.floor(damage * ratio));
+            } 
+                
+            
+        }
+    },
+
+    "Drain": {
+        Execute: (target, data, damage) => {
+            const ratio = data?.drainRate || 0;
+            if (damage && damage > 0) 
+                target.Stats.recoverHp(Math.floor(damage * ratio));
+        }
+    },
+
+    "Recover": {
+        Execute: (target, data) => {
+            const ratio = data?.recoverRate || 0;
+            target.Stats.recoverHp(Math.floor(target.Stats.maxHp * ratio));
+        }
+    },
+
+    "StateCheck": { // 객기, 병상첨병, 베놈쇼크, 근성(특성)
+        Execute: () => {},
+        GetPowerMultiplier : (target, _, data) => {
+            const stateType = data?.targetState || "every";
+            const multiplier = data?.multiplier || 1.0;
+            if ((target.BattleState.Get() !== null && stateType === "every" ) || target.BattleState.Get() === stateType)
+            {
+                console.log(`[moveAbility]/[StateCheck]: 기술 위력 ${multiplier}배 적용!`);
+                return multiplier;
+            }
+            return 1.0;
+        }
+    }
+};

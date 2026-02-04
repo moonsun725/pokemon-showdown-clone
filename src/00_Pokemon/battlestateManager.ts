@@ -3,14 +3,23 @@ import type { Pokemon } from "./pokemon.js";
 export class BattleStateManager 
 {
     owner: Pokemon;
-    status: string | null;
+    private status: string;
     constructor(owner: Pokemon)
     {
         this.owner = owner;
-        this.status = null;
+        this.status = "Normal";
+    }
+    Set(state: string)
+    {
+        this.status = state;
+    }
+    Get() : string
+    {
+        return this.status;
     }
     reset()
     {
-        this.status = null;
+        this.Set("Normal")
     }
+    
 }
