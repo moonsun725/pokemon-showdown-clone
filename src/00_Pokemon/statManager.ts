@@ -54,8 +54,8 @@ export class StatsManager {
     reset() : void
     {
         this.hp = this.maxHp;
-        this.atk = this.baseStats.atk; // 종족값도 랭크에 따라서 실수치가 올라가는거라 리셋은 해줘야됨
-        this.types = this.baseStats.type;
+        // this.atk = this.baseStats.atk; // 종족값도 랭크에 따라서 실수치가 올라가는거라 리셋은 해줘야됨
+        this.types = [...this.baseStats.type];
         console.log("[statManager]: 전투상태 초기화 완료")
     }
 }

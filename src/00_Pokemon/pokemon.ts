@@ -1,7 +1,6 @@
 import data_P from '../05_Data/pokedex.json' with { type: 'json' };
 import type { Move, MoveInstance } from '../01_Moves/move.js';
 import { GetMove } from '../01_Moves/MoveManager.js';
-import type { Rank } from '../03_BattleSystem/Rank.js';
 import { RankToMultiplier, RankToMultiplierAccEv, RankToMultiplierCrit } from '../03_BattleSystem/Rank.js';
 import { calculateDamage } from '../03_BattleSystem/dmgCalc.js';
 import { ProcessMoveEffects } from '../03_BattleSystem/moveAbility.js';
