@@ -6,7 +6,7 @@ import data_Debufs from '../05_Data/bufsNdebufs.json' with { type: 'json' };
 export function TryApplyStatus(target: Pokemon, statusTag: string): boolean {
     
     // 1. 이미 상태이상이 있으면 실패
-    if (target.BattleState.status !== null) {
+    if (target.BattleState.Get() !== null) {
         console.log("[StatusSystem]: 그러나 실패하고 말았다!");
         return false;
     }
@@ -19,7 +19,7 @@ export function TryApplyStatus(target: Pokemon, statusTag: string): boolean {
     }
 
     // 3. 상태 적용
-    target.BattleState.status = statusTag;
+    target.BattleState.Set(statusTag);
     console.log(`✨ [Status] ${target.name}에게 '${statusData.name}'(${statusTag}) 적용 완료!`);
     
     return true;
@@ -28,10 +28,10 @@ export function TryApplyStatus(target: Pokemon, statusTag: string): boolean {
 export function ResolveStatusEffects(pokemon: Pokemon): void {
     
     // 1. 상태이상이 없으면 패스
-    if (!pokemon.BattleState.status) return;
+    if (!pokemon.BattleState.Get()) return;
 
     // 2. 데이터 조회 (C++의 Lookup)
-    const statusData = data_Debufs.debufs.find(d => d.info === pokemon.BattleState.status);
+    const statusData = data_Debufs.debufs.find(d => d.info === pokemon.BattleState.Get());
     if (!statusData) return;
 
     // 3. 도트 데미지(DoT) 처리
