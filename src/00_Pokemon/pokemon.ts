@@ -142,6 +142,8 @@ export class Pokemon {
         this.BattleState.reset();
         this.Rank.reset();
     }
+
+    
 }
 
 // 2026-01-06

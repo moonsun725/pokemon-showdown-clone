@@ -28,7 +28,7 @@ export class Player {
 
         // 예외 처리: 없는 인덱스 or 이미 기절함 or 지금 나와있는 놈임
         if (!target) return false;
-        if (target.hp <= 0) return false;
+        if (target.Stats.hp <= 0) return false;
         if (target === this.activePokemon) return false;
 
         console.log(`🔄 [Switch] ${this.id}: ${this.activePokemon.name} -> ${target.name} 교체!`);
@@ -44,11 +44,11 @@ export class Player {
     // 패배 체크 (파티 전멸 확인)
     isDefeated(): boolean {
         // 모든 포켓몬의 HP가 0 이하면 패배
-        return this.party.every(p => p.status == "FNT");
+        return this.party.every(p => p.BattleState.Get() == "FNT");
     }
 
     hasRemainingPokemon(): boolean
     {
-        return !this.party.every(p => p.status == "FNT");
+        return !this.party.every(p => p.BattleState.Get() == "FNT");
     }
 }
