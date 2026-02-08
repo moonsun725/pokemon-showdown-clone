@@ -1,5 +1,5 @@
 // src/Game/VolatileStatusManager.ts
-import { Pokemon } from './pokemon.js';
+import { Pokemon } from './0_pokemon.js';
 import { type VolatileStatus, VolatileRegistry } from '../03_BattleSystem/VolatileStatus.js';
 
 export class VolatileStatusManager {
@@ -15,6 +15,8 @@ export class VolatileStatusManager {
         // 이미 있으면 덮어쓸지, 실패할지 등의 정책 결정 가능
         if (this.statuses.has(id)) {
             // 예: 지속시간만 갱신하거나, 그냥 덮어쓰기
+            console.log(`그러나 ${this.owner.name}은 이미 [${id}] 상태에 빠져 있다!`)
+            return;
         }
 
         // ★ 여기서 Init을 호출해버리면 Pokemon 클래스는 신경 안 써도 됨!
@@ -63,8 +65,21 @@ export class VolatileStatusManager {
             }
         }
     }
+    // 5. 행동 이전에 발동하는 효과(풀죽음, 헤롱헤롱, 혼란)
+    CheckBeforeMove(): boolean {
+        for (const [id, status] of this.statuses) {
+            const logic = VolatileRegistry[id];
+            
+            // OnBeforeMove가 있고, 실행 결과가 false라면 행동 불가!
+            if (logic && logic.OnBeforeMove) {
+                const canMove = logic.OnBeforeMove(this.owner, status.data);
+                if (!canMove) return false; // 하나라도 못 움직이게 하면 중단
+            }
+        }
+        return true; // 아무 문제 없으면 행동 가능
+    }
 
-    // 5. 전체 초기화 (교체 시 등)
+    // 6. 전체 초기화 (교체 시 등)
     Clear() {
         this.statuses.clear();
     }

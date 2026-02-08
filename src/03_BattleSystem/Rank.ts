@@ -1,3 +1,5 @@
+
+
 export interface Rank{
     atk: number; // 당장은 공격 수치만 쓸거야
     def: number;

@@ -171,6 +171,19 @@
           }
         }
       ]
+    },
+    { "name": "솔라빔", "power": 120, "type": "Grass", "accuracy": 100, "category": "Special", "pp": 10,
+      "effects": [
+        {
+          "type": "TwoTurn",
+          "timing": "OnUse",   
+          "target": "Self",
+          "data": { 
+            "chargeId": "SolarBeam_Charge",
+            "msg": "빛을 흡수했다!"
+          }
+        }
+      ]
     }
     
   ]

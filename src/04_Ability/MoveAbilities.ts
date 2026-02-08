@@ -1,10 +1,11 @@
-import { Pokemon } from "../00_Pokemon/pokemon.js";
+import { Pokemon } from "../00_Pokemon/0_pokemon.js";
+import { type Move } from "../01_Moves/move.js";
 import { TryApplyStatus } from "../03_BattleSystem/StatusSystem.js";
 import type { VolatileStatus } from '../03_BattleSystem/VolatileStatus.js';
 
 export interface AbilityLogic {
     // 대부분의 경우 user, target을 구분해서 받지 않고, "적용 대상(target)" 하나만 받음
-    Execute(target: Pokemon, data: any, damage?: number, source?: Pokemon): void;
+    Execute(target: Pokemon, data: any, damage?: number, source?: Pokemon, move?: Move): boolean | void;
     // 객기, 베놈쇼크: 한쪽만 검사 | 자이로볼, 히트스탬프: 쌍방 검사라 user랑 target 구분할 필요 있음
     GetPowerMultiplier?(target: Pokemon, user: Pokemon, data: any) : number;
 }
@@ -109,6 +110,41 @@ export const AbilityRegistry: { [key: string]: AbilityLogic } = {
                 return multiplier;
             }
             return 1.0;
+        }
+    },
+
+    "TwoTurn": { // 두 턴 기술 (솔라빔, 공중날기 등)
+        Execute: (target, data, _, __, move) => {
+            // target은 JSON 설정에 따라 'Self'(나)로 들어옴
+            const chargeId = data.chargeId; // 예: "SolarBeam_Charge"
+            const msg = data.msg || "기을(를) 모으고 있다!";
+
+            // 1. 이미 충전 상태인지 확인
+            if (target.volatileList.Has(chargeId)) {
+                // 충전 완료! 상태를 지우고 공격 진행 (true)
+                target.volatileList.Remove(chargeId);
+                console.log(`✨ [TwoTurn] ${target.name}의 공격 충전 완료!`);
+                return true; 
+            } 
+            // 2. 충전 상태가 아님 -> 충전 시작하고 공격 중단 (false)
+            else {
+                // 충전 상태 부여 (지속시간 2턴: 이번턴 + 다음턴)
+                target.volatileList.Add(chargeId, { 
+                    typeId: chargeId, 
+                    duration: 2, 
+                    data: { lockedMove: true } // 행동 고정
+                });
+                console.log(`✨ ${target.name}는 ${msg}`);
+                if (move)
+                {
+                    const moveIndex = target.moves.list.findIndex(m => m.def.name === move.name);
+                    if (moveIndex !== -1) 
+                        target.BattleState.setLock(moveIndex);
+                
+                }
+                return false; // 기술 중단하도록 false 반환
+            }
+            
         }
     }
 };

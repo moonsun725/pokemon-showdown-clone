@@ -1,5 +1,5 @@
 // BattleSystem/StatusSystem.ts
-import { Pokemon } from '../00_Pokemon/pokemon.js';
+import { Pokemon } from '../00_Pokemon/0_pokemon.js';
 import data_Debufs from '../05_Data/bufsNdebufs.json' with { type: 'json' };
 
 // 상태이상 부여 함수 (Manager)

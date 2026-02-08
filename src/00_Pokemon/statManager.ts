@@ -1,4 +1,4 @@
-import type { Pokemon } from "./pokemon.js";
+import type { Pokemon } from "./0_pokemon.js";
 
 export interface IPokemonData {
     name: string;
@@ -20,6 +20,7 @@ export class StatsManager {
     public hp: number;
     public maxHp: number;
     public atk: number;
+    public spe: number;
     public types: string[]; // 나중에 물붓기 같은 기술 생각하면 동적으로 다뤄야 함...
     // ... def, spa, spd, spe 등등
 
@@ -31,16 +32,17 @@ export class StatsManager {
         this.maxHp = data.hp; // (ex: data.hp * 2 + 110 ...)
         this.hp = this.maxHp;
         this.atk = data.atk;
+        this.spe = data.spe;
         this.types = data.type;
         // ...
     }
-
+    
     // 데미지 받을 때 HP 처리 등도 여기서? 아니면 포켓몬 클래스에서?
     // 보통 HP 관리는 여기서 메서드로 제공하는 게 깔끔함
-    takeDamage(amount: number): void {
+    takeDamage(amount: number): boolean {
         this.hp -= amount;
         if (this.hp < 0) this.hp = 0;
-        this.owner.BattleState.Set("FNT");
+        return this.hp === 0;
     }
 
     recoverHp(amount: number) : void

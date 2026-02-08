@@ -1,5 +1,5 @@
 // mechanics.ts
-import { Pokemon } from '../00_Pokemon/pokemon.js';
+import { Pokemon } from '../00_Pokemon/0_pokemon.js';
 // Move 인터페이스가 pokemon.ts에 export 되어 있다고 가정 (안 되어 있으면 추가 필요)
 import type { Move } from '../01_Moves/move.js'; 
 import { GetPowerMultiplier } from './moveAbility.js';

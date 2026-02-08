@@ -1,4 +1,4 @@
-import { Pokemon } from '../00_Pokemon/pokemon.js';
+import { Pokemon } from '../00_Pokemon/0_pokemon.js';
 import type { Move } from '../01_Moves/move.js';
 import { AbilityRegistry} from '../04_Ability/MoveAbilities.js';
 
@@ -23,10 +23,13 @@ export function ProcessMoveEffects(
     attacker: Pokemon, // user (쓰는 쪽)
     currentTiming: EffectTrigger, // 현재 시점 ('OnUse' or 'OnHit')
     damage: number = 0
-    ): void 
+    ): boolean
 {
     
-    if (!move.effects) return;
+    if (!move.effects) return true;
+
+    // 기술 고정 효과를 위해서
+    let shouldContinue = true; // 기본값: 진행
 
     for (const entry of move.effects) // effects가 effect의 배열이니 foreach로 내용물 확인
     { 
@@ -59,9 +62,13 @@ export function ProcessMoveEffects(
         const logic = AbilityRegistry[entry.type];
         if (logic) {
             // 이제 로직에게 "누구한테(actualTarget)" 할지만 알려주면 됨
-            logic.Execute(actualTarget, entry.data, damage); 
+            const result = logic.Execute(actualTarget, entry.data, damage, attacker, move);
+            
+            if (result === false) 
+                shouldContinue = false; // 충전 중이면 false로 쓰는거지
         }
     }
+    return shouldContinue;
 }
 
 // =========================================================

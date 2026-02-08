@@ -1,6 +1,6 @@
 import { RankToMultiplier, RankToMultiplierAccEv, RankToMultiplierCrit } from '../03_BattleSystem/Rank.js';
 import type { Rank } from '../03_BattleSystem/Rank.js';
-import type { Pokemon } from './pokemon.js';
+import type { Pokemon } from './0_pokemon.js';
 export class RankManager
 {
     owner: Pokemon;
@@ -9,7 +9,7 @@ export class RankManager
         this.owner = owner;
     }
 
-    public rank: Rank = {
+    private rank: Rank = {
         atk: 0, 
         def: 0, 
         spa: 0,
@@ -35,6 +35,10 @@ export class RankManager
             atk: 0, def: 0, spa: 0, spd: 0, spe: 0,
             acc: 0, eva: 0, crit: 0 // pokemon.Rank.atk = 0; 이런식으로 해도 되긴하네
         }
+    }
+    get(stat: keyof Rank)
+    {
+        return this.rank[stat]
     }
 
 }

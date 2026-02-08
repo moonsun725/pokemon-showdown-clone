@@ -1,7 +1,7 @@
 // room.ts
 import { Server } from 'socket.io';
 import { Player } from './Player.js';
-import { Pokemon, createPokemon,} from '../00_Pokemon/pokemon.js';
+import { Pokemon, createPokemon,} from '../00_Pokemon/0_pokemon.js';
 import type { Move } from '../01_Moves/move.js';
 import { ResolveStatusEffects } from '../03_BattleSystem/StatusSystem.js';
 import { VolatileRegistry } from '../03_BattleSystem/VolatileStatus.js';
@@ -349,8 +349,8 @@ export class GameRoom {
         if (!this.p1 || !this.p2) return;
 
         let activePoke: { player: any, speed: number }[] = [];
-        activePoke.push({player: this.p1, speed: this.p1.activePokemon.speed});
-        activePoke.push({player: this.p2, speed: this.p2.activePokemon.speed});
+        activePoke.push({player: this.p1, speed: this.p1.activePokemon.Stats.spe});
+        activePoke.push({player: this.p2, speed: this.p2.activePokemon.Stats.spe});
 
         activePoke.sort((a,b)=>{
             if(a.speed !== b.speed)
@@ -390,11 +390,11 @@ export class GameRoom {
         // UI 업데이트 및 턴 시작 신호
         this.broadcastState(io);
         
-        if(this.p1.activePokemon.status === "FNT")
+        if(this.p1.activePokemon.BattleState.Get() === "FNT")
         {
             this.handleFaint(this.p1, io);
         } 
-        else if (this.p2.activePokemon.status === "FNT")
+        else if (this.p2.activePokemon.BattleState.Get() === "FNT")
         {
             this.handleFaint(this.p2, io);
         }
@@ -404,6 +404,38 @@ export class GameRoom {
             io.to(this.roomId).emit('turn_start');
         }
  
+    }
+
+    async startTurn() {
+        
+        // 1. 플레이어 1 체크
+        const p1Lock = this.p1.activePokemon.BattleState.lockedMoveIndex;
+        let p1MoveIndex = -1;
+
+        if (p1Lock !== null) {
+            // 잠겨있으면 입력 요청 스킵하고 바로 설정
+            console.log(`[Server] P1은 행동 고정 상태입니다. (기술: ${p1Lock})`);
+            p1MoveIndex = p1Lock;
+        } else {
+            // 잠겨있지 않으면 클라이언트에게 요청 전송
+            this.sendInputRequest(this.p1);
+        }
+
+        // 2. 플레이어 2 체크 (동일 로직)
+        const p2Lock = this.p2.activePokemon.BattleState.lockedMoveIndex;
+        let p2MoveIndex = -1;
+        // ... (위와 동일)
+
+        // 3. 입력 대기 (Promise.all 등)
+        // 잠기지 않은 플레이어의 입력만 기다림
+        await this.waitForInputs(); 
+
+        // 4. 입력이 없는 쪽(고정된 쪽)은 lockedMoveIndex로 채워넣음
+        if (p1MoveIndex === -1) p1MoveIndex = this.receivedInputP1;
+        if (p2MoveIndex === -1) p2MoveIndex = this.receivedInputP2;
+
+        // 5. 턴 해결 (ResolveTurn)
+        this.resolveTurn(p1MoveIndex, p2MoveIndex);
     }
 
 

@@ -1,6 +1,4 @@
-import { Pokemon } from '../00_Pokemon/pokemon.js';
-import { type Move } from '../01_Moves/move.js';
-
+import { Pokemon } from '../00_Pokemon/0_pokemon.js';
 
 export interface VolatileStatus {
     typeId: string;       // 상태 ID (예: "LeechSeed", "Confusion", "Flinch")
@@ -55,7 +53,7 @@ export const VolatileRegistry: { [key: string]: VolatileLogic } = {
             const wakeTurn = Math.floor(Math.random() * (data.duration)) + 1;
             status.duration = wakeTurn;
         },
-        OnBeforeMove: (pokemon, data) => {
+        OnBeforeMove: (pokemon) => {
             console.log(`🌀 ${pokemon.name}는 혼란에 빠져 있다!`);
             
             // 33% 확률로 자해
