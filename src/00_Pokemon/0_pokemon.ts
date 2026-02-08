@@ -1,5 +1,4 @@
 import data_P from '../05_Data/pokedex.json' with { type: 'json' };
-
 import { MoveManager } from './Components/moveManager.js';
 import { VolatileStatusManager } from './Components/volatileStatusManager.js';
 import { StatsManager, type IPokemonData, type realStats } from './Components/statManager.js';
@@ -15,11 +14,11 @@ export class Pokemon {
     
     public Stats: StatsManager; // 각종 수치들 다 여기로 몰았음
     public BattleState: BattleStateManager; // 전투상태(주요 상태이상) 관리
-    public Rank: RankManager;
-    public volatileList; // 휘발성 상태이상 관리
-
-    // 2. 기술 배열 추가 (C++의 std::vector<Move> 느낌)
+    public Rank: RankManager; // 아 이거 대소문자 진짜 신경쓰이는데 어카지 
+    public volatileList: VolatileStatusManager; // 휘발성 상태이상 관리
     public moves: MoveManager;
+    public ability: AbilityManager;
+    public item: ItemManager
 
     constructor(name: string, data: IPokemonData, options?: PokemonOptions) 
     {
@@ -29,6 +28,8 @@ export class Pokemon {
         this.volatileList = new VolatileStatusManager(this);
         this.Rank = new RankManager(this);
         this.moves = new MoveManager(this, options?.moves);
+        this.ability = new AbilityManager(this, options?.ability);
+        this.item = new ItemManager(this, options?.items)
     }
 
     GetStat(key: keyof realStats)

@@ -366,7 +366,18 @@ export class GameRoom {
             
         for (const active of activePoke)
         {
+            const p = active.player.activePokemon;
+            
+            p.ability.OnTurnEnd(); // 1. 특성 발동 (가속 등)
 
+            p.item.OnTurnEnd(); // 2. 아이템 발동 (먹다남은음식 등)
+
+            // 3. 기존 로직
+            p.volatileList.UpdateTurn(); // 가변상태
+            if (p.hp <= 0) continue;
+            ResolveStatusEffects(p); // 상태이상
+            if (p.hp <= 0) continue;
+            
             /* 실제 순서
                 날씨 (모래바람/싸라기눈)
 
@@ -378,11 +389,6 @@ export class GameRoom {
 
                 상태 이상 (독 / 화상) ← ResolveStatusEffects
             */ 
-            
-            active.player.activePokemon.volatileList.UpdateTurn();
-            if (active.player.activePokemon.hp <= 0) continue;
-            ResolveStatusEffects(active.player.activePokemon);
-            if (active.player.activePokemon.hp <= 0) continue;
         }
         
         
