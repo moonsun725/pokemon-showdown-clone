@@ -95,7 +95,7 @@ export class GameRoom {
     join(socketId: string): 'p1' | 'p2' | 'spectator'  // 여기 : 'p1' | 'p2' | 'spectator' 의미도 궁금해 >< 저렇게 적으면 오직 저 3가지 글자 중 하나만 반환한다고 보장 (오타 방지에 탁월)
     {
         if (!this.p1) {
-            const newParty = [createPokemon("피카츄", {moves: ["10만볼트", "전광석화", "칼춤", "울음소리"]}), createPokemon("파이리",{moves: ["화염방사", "플레어드라이브", "용성군"]})];
+            const newParty = [createPokemon("피카츄", {moves: ["10만볼트", "전광석화", "칼춤", "울음소리"], items: "Leftovers"}), createPokemon("파이리",{moves: ["화염방사", "플레어드라이브", "용성군"]})];
             this.p1 = new Player(socketId, newParty)
             this.p1.activePokemon = this.p1.party[0]!; // >< 여기도 일단 느낌표처리
             this.players[socketId] = 'p1';

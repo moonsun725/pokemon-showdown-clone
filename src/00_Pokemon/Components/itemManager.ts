@@ -11,6 +11,15 @@ export class ItemManager {
         this.currentId = itemId || null;
         this.Init();
     }
+    GetDamageMod(move: any, currentPower: number): number {
+        if (!this.currentId) return 1.0;
+            
+        const logic = ItemRegistry[this.currentId];
+        if (logic && logic.OnDamageMod) {
+            return logic.OnDamageMod(this.owner, move, currentPower);
+        }
+        return 1.0; // 특성 없으면 배율 1.0
+    }
 
     Init() 
     {

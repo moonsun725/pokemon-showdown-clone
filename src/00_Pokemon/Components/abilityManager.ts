@@ -23,5 +23,15 @@ export class AbilityManager {
         if (logic && logic.OnTurnEnd) logic.OnTurnEnd(this.owner);
     }
     
+    GetDamageMod(move: any, currentPower: number): number {
+        if (!this.currentId) return 1.0;
+        
+        const logic = AbilityRegistry[this.currentId];
+        if (logic && logic.OnDamageMod) {
+            return logic.OnDamageMod(this.owner, move, currentPower);
+        }
+        return 1.0; // 특성 없으면 배율 1.0
+    }
+    
     // ... 필요한 훅 계속 추가
 }
