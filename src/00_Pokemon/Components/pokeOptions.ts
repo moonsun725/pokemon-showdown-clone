@@ -3,6 +3,6 @@ export interface PokemonOptions {
     ivs?: { [key: string]: number }; // 개체값 (나중을 위해)
     evs?: { [key: string]: number }; // 노력치
     items?: string // 도구
-    passiveAbility?: string // 특성
+    ability?: string // 특성
     nature?: string; // 성격
 }
