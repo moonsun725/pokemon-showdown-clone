@@ -14,7 +14,7 @@ export interface AbilityLogic {
 // 기술의 effect(문자열)와 실제 로직을 매핑
 // =========================================================
 
-export const AbilityRegistry: { [key: string]: AbilityLogic } = {
+export const EffectRegistry: { [key: string]: AbilityLogic } = {
 
     // 1. 상태이상 계열 (Status Effects)
     "PAR": { 
@@ -123,6 +123,9 @@ export const AbilityRegistry: { [key: string]: AbilityLogic } = {
             if (target.volatileList.Has(chargeId)) {
                 // 충전 완료! 상태를 지우고 공격 진행 (true)
                 target.volatileList.Remove(chargeId);
+
+                target.BattleState.unlock(); // 기술 고정 해제
+
                 console.log(`✨ [TwoTurn] ${target.name}의 공격 충전 완료!`);
                 return true; 
             } 
@@ -132,7 +135,7 @@ export const AbilityRegistry: { [key: string]: AbilityLogic } = {
                 target.volatileList.Add(chargeId, { 
                     typeId: chargeId, 
                     duration: 2, 
-                    data: { lockedMove: true } // 행동 고정
+                    data: { lockedMove: true, chargeType: data?.chargeType} // 행동 고정 + 무적 여부
                 });
                 console.log(`✨ ${target.name}는 ${msg}`);
                 if (move)

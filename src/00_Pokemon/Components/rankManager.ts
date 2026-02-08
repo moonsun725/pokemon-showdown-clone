@@ -1,6 +1,6 @@
-import { RankToMultiplier, RankToMultiplierAccEv, RankToMultiplierCrit } from '../03_BattleSystem/Rank.js';
-import type { Rank } from '../03_BattleSystem/Rank.js';
-import type { Pokemon } from './0_pokemon.js';
+import { RankToMultiplier, RankToMultiplierAccEv, RankToMultiplierCrit } from '../../03_BattleSystem/Rank.js';
+import type { Rank } from '../../03_BattleSystem/Rank.js';
+import type { Pokemon } from '../0_pokemon.js';
 export class RankManager
 {
     owner: Pokemon;

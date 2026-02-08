@@ -1,7 +1,7 @@
 {
     "moves": [
     { "name": "10만볼트", "power": 90, "type": "Electric", "accuracy": 100, "category": "Special", "pp": 15, 
-    "effects": 
+      "effects": 
       [
         {
           "type": "PAR",
@@ -184,7 +184,36 @@
           }
         }
       ]
+    },
+    { "name": "공중날기", "power": 90, "type": "Flying", "accuracy": 95, "category": "Physical", "pp": 15,
+      "effects": [
+        {
+          "type": "TwoTurn",
+          "timing": "OnUse",   
+          "target": "Self",
+          "data": { 
+            "chargeId": "Fly_Charge",
+            "msg": "빛을 흡수했다!",
+            "chargeType": "fly"
+          }
+        }
+      ]
+    },
+    { "name": "구멍파기", "power": 80, "type": "Ground", "accuracy": 100, "category": "Physical", "pp": 10,
+      "effects": [
+        {
+          "type": "TwoTurn",
+          "timing": "OnUse",   
+          "target": "Self",
+          "data": { 
+            "chargeId": "Dig_Charge",
+            "msg": "빛을 흡수했다!",
+            "chargeType": "dig"
+          }
+        }
+      ]
     }
+
     
   ]
 }

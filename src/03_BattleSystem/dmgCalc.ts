@@ -26,9 +26,9 @@ export function calculateDamage(attacker: Pokemon, defender: Pokemon, move: Move
             Tmultiplier *= eff;
         });
 
-        let Rmultiplier = RankToMultiplier(attacker.Rank.rank.atk); // 공격 랭크 넣고 돌려
-        let realAtk = Math.floor(attacker.Stats.atk * Rmultiplier); // 공격자 보정치
-        console.log(`[DamageCalc]: 공격자 보정 공격력: ${realAtk} (원래: ${attacker.Stats.atk}, 랭크 배율: ${Rmultiplier})`);
+        let Rmultiplier = RankToMultiplier(attacker.Rank.get('atk')); // 공격 랭크 넣고 돌려
+        let realAtk = Math.floor(attacker.Stats.get('atk') * Rmultiplier); // 공격자 보정치
+        console.log(`[DamageCalc]: 공격자 보정 공격력: ${realAtk} (원래: ${attacker.Stats.get('atk')}, 랭크 배율: ${Rmultiplier})`);
 
         let realDef = 10; // 임시 초깃값
 

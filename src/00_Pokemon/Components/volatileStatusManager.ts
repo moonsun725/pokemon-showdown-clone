@@ -1,6 +1,7 @@
 // src/Game/VolatileStatusManager.ts
-import { Pokemon } from './0_pokemon.js';
-import { type VolatileStatus, VolatileRegistry } from '../03_BattleSystem/VolatileStatus.js';
+import { Pokemon } from '../0_pokemon.js';
+import { type VolatileStatus, VolatileRegistry } from '../../03_BattleSystem/VolatileStatus.js';
+import type { Move } from '../../01_Moves/move.js';
 
 export class VolatileStatusManager {
     private owner: Pokemon; // 이 상태들이 누구 것인지 알고 있어야 함
@@ -77,6 +78,22 @@ export class VolatileStatusManager {
             }
         }
         return true; // 아무 문제 없으면 행동 가능
+    }
+    // 일시 무적 여부 판단
+    IsInvulnerable(incomingMove: Move): boolean {
+        for (const [id, status] of this.statuses) {
+            // 1. 무적 플래그가 있는 상태인지 확인
+            if (status.data && status.data.chargeType) { // 솔라빔의 경우는 chrageType이 없고, 구멍파기, 공중날기의 경우에는 있음
+                
+                // (나중에 구현할 심화 로직 위치)
+                // 예: 구멍파기(Dig) 중인데 지진(Earthquake)이 오면 무적이 아님!
+                // if (id === 'Dig_Charge' && incomingMove.name === '지진') return false;
+                // if (id === 'Fly_Charge' && incomingMove.name === '번개') return false;
+
+                return true; // 무적 맞음
+            }
+        }
+        return false; // 무적 아님
     }
 
     // 6. 전체 초기화 (교체 시 등)

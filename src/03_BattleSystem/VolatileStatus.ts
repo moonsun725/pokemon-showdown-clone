@@ -59,7 +59,7 @@ export const VolatileRegistry: { [key: string]: VolatileLogic } = {
             // 33% 확률로 자해
             if (Math.random() < 0.33) {
                 console.log(`💥 자신을 공격하고 말았다!`);
-                pokemon.useMove(5, pokemon);
+                pokemon.moves.selfAttack();
                 return false; // 행동 불가
             }
             return true; // 행동 가능

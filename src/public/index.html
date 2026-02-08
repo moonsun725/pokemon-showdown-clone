@@ -123,13 +123,13 @@
 
             // 2. 제목 설정
             let roleText = "관전자 Mode";
-            if (myRole === 'p1') roleText = "Player 1 (피카츄)";
-            else if (myRole === 'p2') roleText = "Player 2 (파이리)";
+            if (myRole === 'p1') roleText = "Player 1";
+            else if (myRole === 'p2') roleText = "Player 2";
             
             gameTitle.innerText = `[${currentRoomId}번 방] - ${roleText}`;
         });
 
-         socket.on('update_ui', (data) => {
+        socket.on('update_ui', (data) => {
 
             const gameState = data.gameState; 
             const faintId = data.faintPlayerId; // (필요하면 사용)
@@ -150,9 +150,11 @@
             switchButton.innerHTML = '';
             discardButton.innerHTML = '';
             
+            
             let myMoves = [];
             if (myRole === 'p1' && data.p1.active) myMoves = data.p1.active.moves;
             else if (myRole === 'p2' && data.p2.active) myMoves = data.p2.active.moves;
+            // move 중에서도 이름, 타입, pp만 가져온다
             else {
                 if(myRole === '') moveButtonsContainer.innerText = "로딩 중...";
                 else moveButtonsContainer.innerText = "관전 중입니다.";
@@ -184,11 +186,12 @@
                 btnCancelSwitch.style.display = 'inline-block';
             }
 
-            if (myMoves) {
-                myMoves.forEach((moveInst, Moveindex) => { 
-                    const name = moveInst.def.name; // 데이터에서 불러오기
-                    const pp = moveInst.currentPp; // 실제 객체에서 불러오기
-                    const maxPp = moveInst.maxPp;
+            if (myMoves) { // 있겠지
+                myMoves.forEach((moveElement, Moveindex) => { 
+                    const name = moveElement.name; // 이제 데이터 / 실수치 구분할 필요 없음
+                    const type = moveElement.type // toData에서 묶어서 보내주거든
+                    const pp = moveElement.currentPp; 
+                    const maxPp = moveElement.maxPp;
 
                     const btn = document.createElement('button');
     

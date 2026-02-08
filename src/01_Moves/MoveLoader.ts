@@ -10,7 +10,7 @@ const __dirname = path.dirname(__filename);
 
 // JSON 파일 경로 (위치에 따라 수정 필요)
 // 보통 src/Game/moves.json 에 있다고 가정
-const jsonPath = path.join(__dirname, '../../Data/moves.json');
+const jsonPath = path.join(__dirname, '../05_Data/moves.json');
 
 // ★ 기술 도감 (Dictionary)
 // 이름만 대면 기술이 툭 튀어나오게 저장

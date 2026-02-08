@@ -1,4 +1,4 @@
-import type { Pokemon } from "./0_pokemon.js";
+import type { Pokemon } from "../0_pokemon.js";
 
 export class BattleStateManager 
 {

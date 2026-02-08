@@ -1,16 +1,13 @@
 import data_P from '../05_Data/pokedex.json' with { type: 'json' };
-import type { Move, MoveInstance } from '../01_Moves/move.js';
-import { GetMove } from '../01_Moves/MoveLoader.js';
-import { RankToMultiplier, RankToMultiplierAccEv, RankToMultiplierCrit } from '../03_BattleSystem/Rank.js';
-import { calculateDamage } from '../03_BattleSystem/dmgCalc.js';
-import { ProcessMoveEffects } from '../03_BattleSystem/moveAbility.js';
 
-import { MoveManager } from './moveManager.js';
-import { VolatileStatusManager } from './volatileStatusManager.js';
-import { StatsManager, type IPokemonData } from './statManager.js';
-import { BattleStateManager } from './battlestateManager.js';
-import { RankManager } from './rankManager.js';
-import type { PokemonOptions } from './pokeOptions.js';
+import { MoveManager } from './Components/moveManager.js';
+import { VolatileStatusManager } from './Components/volatileStatusManager.js';
+import { StatsManager, type IPokemonData, type realStats } from './Components/statManager.js';
+import { BattleStateManager } from './Components/battlestateManager.js';
+import { RankManager } from './Components/rankManager.js';
+import type { PokemonOptions } from './Components/pokeOptions.js';
+import { AbilityManager } from './Components/abilityManager.js';
+import { ItemManager } from './Components/itemManager.js';
 
 
 export class Pokemon {
@@ -34,18 +31,16 @@ export class Pokemon {
         this.moves = new MoveManager(this, options?.moves);
     }
 
-    // 상태 확인 메서드
-    showCurrent(): void{
-        console.log(`이름: ${this.name}, 체력: ${this.Stats.hp}, 공격 종족값: ${this.Stats.atk}`);
-        this.moves.Show();
+    GetStat(key: keyof realStats)
+    {
+        return this.Stats.get(key);
     }
 
-
-
-    /*learnMove(move: Move): void {
-        this.moves.push(move);
-        console.log(`[pokemon]: ${this.name}이(가) [${move.name}]을(를) 배웠다!`);
-    }*/
+    // 상태 확인 메서드
+    showCurrent(): void{
+        console.log(`이름: ${this.name}, 체력: ${this.Stats.hp}, 공격 종족값: ${this.GetStat('atk')}`);
+        this.moves.Show();
+    }
 
     // 특정 기술로 공격하기
     useMove(moveIndex: number, target: Pokemon): void {
@@ -60,19 +55,6 @@ export class Pokemon {
 
         // 2. 실제 기술 실행은 매니저에게 위임
         this.moves.Execute(moveIndex, target);
-    }
-
-    CheckAcuracy(move: Move, target: Pokemon): boolean {
-        
-        if (move.accuracy === null) {
-            return true; // 명중률이 없는 기술은 항상 명중
-        }
-        else {
-            // 명중률 계산 (간단한 예시)
-            const random = Math.random() * 100;
-            return random < move.accuracy*(RankToMultiplierAccEv(this.Rank.get('acc')-target.Rank.get('eva')));
-        }
-        
     }
 
     ResetCondition(): void {
@@ -106,10 +88,34 @@ export class Pokemon {
         this.BattleState.Set(status);
     }
 
+    // ★ [New] 클라이언트 전송용 데이터 변환 메서드
+    toData() {
+        return {
+            name: this.name,
+            hp: this.Stats.hp,
+            maxHp: this.Stats.maxHp,
+            // stats: this.Stats.Stats, // 필요하다면
+            // 보통 숨김 정보지만 UI 갱신용으로 필요하다면 추가
+            
+            // 상태이상 (BattleState가 객체라면 .status 문자열만 보냄)
+            status: this.BattleState.Get(), // "PAR", "PSN" 등 문자열만
+
+            // 기술 목록 (MoveManager 통째로 보내면 안 됨! 필요한 것만 매핑)
+            moves: this.moves.list.map(m => ({
+                name: m.def.name,
+                type: m.def.type,
+                currentPp: m.currentPp,
+                maxPp: m.maxPp,
+            })),
+            
+            // 이미지 경로 등을 위한 ID가 있다면 추가
+            // id: this.data.id 
+        };
+    }
 }
 
 // 데이터를 기반으로 포켓몬 생성 (C++의 팩토리 패턴과 유사)
-export function createPokemon(name: string): Pokemon {
+export function createPokemon(name: string, options?: PokemonOptions): Pokemon {
     // 1. JSON 데이터에서 이름이 일치하는 포켓몬 찾기 (C++의 find_if와 유사)
     const pData = data_P.pokedex.find(p => p.name === name);
 
@@ -118,5 +124,5 @@ export function createPokemon(name: string): Pokemon {
     }
 
     // 2. 찾은 데이터로 객체 생성 및 반환
-    return new Pokemon(pData.name, pData);
+    return new Pokemon(pData.name, pData, options);
 }

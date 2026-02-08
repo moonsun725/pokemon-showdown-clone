@@ -1,6 +1,6 @@
 import { Pokemon } from '../00_Pokemon/0_pokemon.js';
 import type { Move } from '../01_Moves/move.js';
-import { AbilityRegistry} from '../04_Ability/MoveAbilities.js';
+import { EffectRegistry} from '../04_Ability/MoveAbilities.js';
 
 // 트리거 타입 정의: 언제 호출되었는가?
 export type EffectTrigger = 'OnUse' | 'OnHit' | 'OnBasePower';
@@ -59,7 +59,7 @@ export function ProcessMoveEffects(
         }
 
         // 4. 로직 실행
-        const logic = AbilityRegistry[entry.type];
+        const logic = EffectRegistry[entry.type];
         if (logic) {
             // 이제 로직에게 "누구한테(actualTarget)" 할지만 알려주면 됨
             const result = logic.Execute(actualTarget, entry.data, damage, attacker, move);
@@ -87,7 +87,7 @@ export function GetPowerMultiplier(
         // 타이밍이 OnBasePower인 것만 찾음
         if (entry.timing !== 'OnBasePower') continue;
 
-        const logic = AbilityRegistry[entry.type];
+        const logic = EffectRegistry[entry.type];
         // 해당 로직에 GetPowerMultiplier 메서드가 있으면 실행
         if (logic && logic.GetPowerMultiplier) {
 

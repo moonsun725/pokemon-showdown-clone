@@ -1,8 +1,8 @@
 {
     "pokedex": [
     { "name": "피카츄", "hp": 100, "atk": 90, "type": ["Electric"], "spe": 90 },
-    { "name": "꼬부기", "hp": 120, "atk": 20, "type": ["Water"], "spe": 43 },
     { "name": "파이리", "hp": 110, "atk": 80, "type": ["Fire"], "spe": 65 },
+    { "name": "꼬부기", "hp": 120, "atk": 20, "type": ["Water"], "spe": 43 },
     { "name": "이상해씨", "hp": 110, "atk": 100, "type": ["Grass", "Poison"], "spe": 70 }
   ]
 }

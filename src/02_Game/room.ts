@@ -95,13 +95,13 @@ export class GameRoom {
     join(socketId: string): 'p1' | 'p2' | 'spectator'  // 여기 : 'p1' | 'p2' | 'spectator' 의미도 궁금해 >< 저렇게 적으면 오직 저 3가지 글자 중 하나만 반환한다고 보장 (오타 방지에 탁월)
     {
         if (!this.p1) {
-            const newParty = [createPokemon("피카츄"), createPokemon("이상해씨")];
+            const newParty = [createPokemon("피카츄", {moves: ["10만볼트", "전광석화", "칼춤", "울음소리"]}), createPokemon("파이리",{moves: ["화염방사", "플레어드라이브", "용성군"]})];
             this.p1 = new Player(socketId, newParty)
             this.p1.activePokemon = this.p1.party[0]!; // >< 여기도 일단 느낌표처리
             this.players[socketId] = 'p1';
             return 'p1';
         } else if (!this.p2) {
-            const newParty2  = [createPokemon("피카츄"), createPokemon("이상해씨")];
+            const newParty2  = [createPokemon("꼬부기", {moves: ["껍질깨기", "HP회복", "전광석화"]}), createPokemon("이상해씨", {moves: ["솔라빔", "지진", "독가스", "기가드레인"]})];
             this.p2 = new Player(socketId, newParty2)
             this.p2.activePokemon = this.p2.party[1]!; // 어쨋든 피카츄 대 이상해씨로 결과는 같다
             this.players[socketId] = 'p2';
@@ -268,8 +268,8 @@ export class GameRoom {
         // ====================================================
 
         // 둘 중 하나라도 공격을 선택했는지 확인
-        const p1Attacks = act1.type === 'move';
-        const p2Attacks = act2.type === 'move';
+        const p1Attacks = (act1.type === 'move');
+        const p2Attacks = (act2.type === 'move');
 
         // 둘 다 교체했으면 공격 페이즈는 스킵됨
         if (!p1Attacks && !p2Attacks) {
@@ -279,25 +279,29 @@ export class GameRoom {
         let attackers: { player: any, moveIndex: number, speed: number, priority: number }[] = [];
 
         if (p1Attacks) {
-            const move = p1.activePokemon.moves[act1.index];
-            if (move) {
-                attackers.push({ 
+            // MoveManager의 Get 메서드 사용
+            const moveInst = p1.activePokemon.moves.Get(act1.index);
+            // 또는 public list에 접근 (읽기 전용으로 쓸 때)
+            // const moveInst = p1.activePokemon.moves.list[act1.index];
+
+            if (moveInst) {
+                attackers.push({
                     player: p1, 
                     moveIndex: act1.index, 
-                    speed: p1.activePokemon.speed, // (임시) 현재 스피드
-                    priority: move.def.priority || 0 
+                    speed: p1.activePokemon.GetStat('spe'),
+                    priority: moveInst.def.priority || 0
                 });
             }
         }
 
         if (p2Attacks) {
-            const move = p2.activePokemon.moves[act2.index];
-            if (move) {
+            const moveInst = p2.activePokemon.moves.Get(act2.index);
+            if (moveInst) {
                 attackers.push({ 
                     player: p2, 
                     moveIndex: act2.index, 
-                    speed: p2.activePokemon.speed, 
-                    priority: move.def.priority || 0 
+                    speed: p2.activePokemon.GetStat('spe'), 
+                    priority: moveInst.def.priority || 0 
                 });
             }
         }
@@ -328,7 +332,7 @@ export class GameRoom {
             user.activePokemon.useMove(attacker.moveIndex, enemy.activePokemon);
 
             // 공격 후 상대가 쓰러졌는지 체크 (게임 종료 로직)
-            if (enemy.activePokemon.status === "FNT") {
+            if (enemy.activePokemon.BattleState.Get() === "FNT") {
                 io.to(this.roomId).emit('chat message', `💀 ${enemy.activePokemon.name}는 쓰러졌다!`);
                 // 여기서 resetGame 혹은 '강제 교체' 페이즈로 넘어가야 함
                 this.handleFaint(enemy, io); 
@@ -349,8 +353,8 @@ export class GameRoom {
         if (!this.p1 || !this.p2) return;
 
         let activePoke: { player: any, speed: number }[] = [];
-        activePoke.push({player: this.p1, speed: this.p1.activePokemon.Stats.spe});
-        activePoke.push({player: this.p2, speed: this.p2.activePokemon.Stats.spe});
+        activePoke.push({player: this.p1, speed: this.p1.activePokemon.GetStat('spe')});
+        activePoke.push({player: this.p2, speed: this.p2.activePokemon.GetStat('spe')});
 
         activePoke.sort((a,b)=>{
             if(a.speed !== b.speed)
@@ -398,46 +402,52 @@ export class GameRoom {
         {
             this.handleFaint(this.p2, io);
         }
-        else {
+        else 
+        {
+            // ====================================================
+            // ★ [수정] 다음 턴 시작 및 자동 행동(잠금) 체크 로직
+            // ====================================================
             console.log(`[room.ts]/[endTurn]: State (BATTLE -> MOVE_SELECT) / 다음 턴 시작`);
             this.gameState = 'MOVE_SELECT';
-            io.to(this.roomId).emit('turn_start');
+
+            // 1. P1 잠금 확인
+            const p1Lock = this.p1.activePokemon.BattleState.lockedMoveIndex;
+            if (p1Lock !== null) {
+                console.log(`🔒 Player 1 행동 고정: Move ${p1Lock}`);
+                // 입력을 기다리지 않고 서버가 바로 행동을 설정
+                this.p1Action = { type: 'move', index: p1Lock };
+                // 클라이언트에게 UI 잠금 신호 전송
+                io.to(this.p1.id).emit('input_locked'); 
+            }
+
+            // 2. P2 잠금 확인
+            const p2Lock = this.p2.activePokemon.BattleState.lockedMoveIndex;
+            if (p2Lock !== null) {
+                console.log(`🔒 Player 2 행동 고정: Move ${p2Lock}`);
+                this.p2Action = { type: 'move', index: p2Lock };
+                io.to(this.p2.id).emit('input_locked');
+            }
+
+            // 3. 상황별 처리
+            if (this.p1Action && this.p2Action) {
+                // Case A: 둘 다 행동 고정 (예: 둘 다 솔라빔 충전 중)
+                console.log("⚡ 양쪽 모두 행동 고정 -> 즉시 턴 실행");
+                
+                // 1초 뒤에 바로 배틀 실행 (입력 단계 스킵)
+                setTimeout(() => {
+                    this.gameState = 'BATTLE';
+                    this.resolveTurn(io);
+                }, 1000);
+            } 
+            else {
+                // Case B: 한 명이라도 입력을 해야 함
+                // turn_start를 보내서 입력을 받을 수 있는 상태로 만듦
+                // (이미 잠긴 플레이어는 input_locked를 받았으므로 클라이언트에서 버튼 비활성화 처리 필요)
+                io.to(this.roomId).emit('turn_start');
+            }
         }
  
     }
-
-    async startTurn() {
-        
-        // 1. 플레이어 1 체크
-        const p1Lock = this.p1.activePokemon.BattleState.lockedMoveIndex;
-        let p1MoveIndex = -1;
-
-        if (p1Lock !== null) {
-            // 잠겨있으면 입력 요청 스킵하고 바로 설정
-            console.log(`[Server] P1은 행동 고정 상태입니다. (기술: ${p1Lock})`);
-            p1MoveIndex = p1Lock;
-        } else {
-            // 잠겨있지 않으면 클라이언트에게 요청 전송
-            this.sendInputRequest(this.p1);
-        }
-
-        // 2. 플레이어 2 체크 (동일 로직)
-        const p2Lock = this.p2.activePokemon.BattleState.lockedMoveIndex;
-        let p2MoveIndex = -1;
-        // ... (위와 동일)
-
-        // 3. 입력 대기 (Promise.all 등)
-        // 잠기지 않은 플레이어의 입력만 기다림
-        await this.waitForInputs(); 
-
-        // 4. 입력이 없는 쪽(고정된 쪽)은 lockedMoveIndex로 채워넣음
-        if (p1MoveIndex === -1) p1MoveIndex = this.receivedInputP1;
-        if (p2MoveIndex === -1) p2MoveIndex = this.receivedInputP2;
-
-        // 5. 턴 해결 (ResolveTurn)
-        this.resolveTurn(p1MoveIndex, p2MoveIndex);
-    }
-
 
     // 행동 취소 반영 함수
     cancelAction(socketId: string, io: Server)
@@ -464,19 +474,26 @@ export class GameRoom {
     // UI 업데이트 헬퍼
     broadcastState(io: Server) {
         if (!this.p1 || !this.p2) return;
-        let poke1 = this.p1.activePokemon;
-        let poke2 = this.p2.activePokemon;
+        // ★ 여기서 객체 통째로 보내던 걸 .toData()로 변경
+        const poke1Data = this.p1.activePokemon.toData();
+        const poke2Data = this.p2.activePokemon.toData();
+
+        // 파티 정보도 순환 참조가 있을 수 있으니 변환 필요
+        // (Player.party도 Pokemon 객체 배열이니까)
+        const p1PartyData = this.p1.party.map(p => p.toData());
+        const p2PartyData = this.p2.party.map(p => p.toData());
 
         io.to(this.roomId).emit('update_ui', {
-            
             p1: { 
-                active : poke1,
-                party : this.p1.party
+                active: poke1Data, // 변환된 데이터 전송
+                party: p1PartyData
              },
 
-            p2: { active : poke2,
-                party : this.p2.party 
+            p2: { 
+                active: poke2Data, // 변환된 데이터 전송
+                party: p2PartyData 
             },
+            
             gameState: this.gameState,
             faintPlayerId: this.faintPlayerId
         });

@@ -1,9 +1,9 @@
-import { Pokemon } from './0_pokemon.js';
-import type { Move, MoveInstance } from '../01_Moves/move.js'; // 경로 확인 필요
-import { GetMove } from '../01_Moves/MoveLoader.js';
-import { calculateDamage } from '../03_BattleSystem/dmgCalc.js';
-import { ProcessMoveEffects } from '../03_BattleSystem/moveAbility.js';
-import { RankToMultiplierAccEv } from '../03_BattleSystem/Rank.js';
+import { Pokemon } from '../0_pokemon.js';
+import type { Move, MoveInstance } from '../../01_Moves/move.js'; // 경로 확인 필요
+import { GetMove } from '../../01_Moves/MoveLoader.js';
+import { calculateDamage } from '../../03_BattleSystem/dmgCalc.js';
+import { ProcessMoveEffects } from '../../03_BattleSystem/moveAbility.js';
+import { RankToMultiplierAccEv } from '../../03_BattleSystem/Rank.js';
 
 export class MoveManager {
     private owner: Pokemon;
@@ -56,7 +56,7 @@ export class MoveManager {
         };
 
         this.list.push(newInstance);
-        // console.log(`[MoveManager] ${this.owner.name}이(가) ${moveName}을(를) 배웠다!`);
+        console.log(`[MoveManager] ${this.owner.name}은(는) ${moveName}을(를) 배웠다!`);
     }
 
     // 기술 가져오기 (room.ts 등에서 사용)
@@ -126,6 +126,11 @@ export class MoveManager {
     private CheckAccuracy(move: Move, target: Pokemon): boolean {
         if (move.accuracy === null) return true; // 필중기
 
+        if (target.volatileList.IsInvulnerable(move)) {
+            console.log(`💨 ${target.name}은(는) 공격을 피했다! (무적 상태)`);
+            return false;
+        }
+
         // (내 명중 랭크 - 상대 회피 랭크)
         const accStage = this.owner.Rank.get('acc'); 
         const evaStage = target.Rank.get('eva');
@@ -135,5 +140,11 @@ export class MoveManager {
         const hitChance = move.accuracy * RankToMultiplierAccEv(stageDiff);
         
         return (Math.random() * 100) < hitChance;
+    }
+
+    selfAttack()
+    {
+        const dmgRes = calculateDamage(this.owner, this.owner, GetMove("자신을 공격하고 말았다!") as Move);
+        this.owner.takeDamage(dmgRes.damage);
     }
 }
