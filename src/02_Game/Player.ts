@@ -1,6 +1,4 @@
-import { Pokemon} from '../00_Pokemon/0_pokemon.js';
-import type { Move } from '../01_Moves/move.js'
-// (나중에 아이템 클래스도 import 필요)
+import { Pokemon } from '../00_Pokemon/0_pokemon.js';
 
 export class Player {
     public id: string;           // 플레이어 이름 or ID

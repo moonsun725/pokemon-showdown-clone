@@ -3,6 +3,7 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import type { Move } from './move.js'; // 위에서 만든 타입 import
+import moves from '../05_Data/moves.json' with { type: 'json' };
 
 // __dirname 설정 (ES Module 환경)
 const __filename = fileURLToPath(import.meta.url);
