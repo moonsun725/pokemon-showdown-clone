@@ -24,12 +24,19 @@ const AVAILABLE_MOVES = [
 ];
 const AVAILABLE_ITEMS = ["(없음)", "Leftovers", "Life_Orb", "Choice_Scarf"]; // ID로 사용
 
-// ★ [상태] 내 팀 데이터 (기본값)
-let myTeam = [
-    { name: "피카츄", item: "Leftovers", moves: ["10만볼트", "전광석화", "칼춤", "독가스"] },
-    { name: "파이리", item: "Life_Orb", moves: ["화염방사", "공중날기", "용의춤", "지진"] },
-    // 나머지는 비워두거나 기본값 채움 (여기선 2마리만 예시)
-];
+// ★ [상태] 로컬 스토리지에서 불러오기 (없으면 기본값)
+let myTeam = [];
+const savedTeam = localStorage.getItem('myPokemonTeam');
+
+if (savedTeam) {
+    myTeam = JSON.parse(savedTeam); // 저장된 데이터 파싱
+} else {
+    // 저장된 게 없으면 기본 렌탈팀 설정
+    myTeam = [
+        { name: "피카츄", item: "Leftovers", moves: ["10만볼트", "전광석화", "칼춤", "독가스"] },
+        { name: "파이리", item: "Life_Orb", moves: ["화염방사", "공중날기", "용성군", "지진"] }
+    ];
+}
 
 // 게임 UI 요소들
 const p1Name = document.getElementById('p1-name');
@@ -76,7 +83,8 @@ function updateHpUI(current, max, barElement, textElement) {
     }
 }
 
-// 로비 입장
+// 로비 입장 - 레거시 코드
+/*
 btnJoin.addEventListener('click', () => {
     const roomId = roomInput.value.trim();
     if (!roomId) {
@@ -85,7 +93,7 @@ btnJoin.addEventListener('click', () => {
     }
     socket.emit('join_game', roomId);
 });
-
+*/
 // 파티 편집기
 // =========================================================
 // 1. 화면 전환 로직

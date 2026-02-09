@@ -29,16 +29,20 @@ io.on('connection', (socket) => {
 
     // 1. 방 입장 요청 처리 (클라이언트가 'join_game' 이벤트를 보내면 실행)
     socket.on('join_game', (data) => {
-        // 이미 방에 들어가 있다면 무시하거나 기존 방 나가기 처리 (여기선 생략)
-        
+        // 1. 초기값 선언
         let roomId = "";
         let teamData = null;
 
+        // 2. 타입에 따른 분기 (심플 이즈 베스트)
         if (typeof data === 'string') {
+            // 예전 방식: 방 제목만 보냈을 때
             roomId = data;
+            console.log(`[Server] 단순 입장: ${roomId}`);
         } else {
+            // 새 방식: 객체({ roomId, team })로 보냈을 때
             roomId = data.roomId;
             teamData = data.team;
+            console.log(`[Server] 팀 데이터 입장: ${roomId} (팀원: ${teamData?.length || 0}명)`);
         }
 
         if (socketToRoom[socket.id]) return;
@@ -58,6 +62,7 @@ io.on('connection', (socket) => {
             rooms[roomId] = room;
         }
 
+        console.log(`[server]/join_game: 파티 데이터 확인 ${teamData}`);
         // 3. 이제 room은 무조건 GameRoom 타입임 (undefined 아님)
         const myRole = room.join(socket.id, teamData);
 
