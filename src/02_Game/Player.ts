@@ -36,6 +36,7 @@ export class Player {
         // ★ 교체 로직 (포인터 변경)
         // 여기서 '랭크 초기화' 같은 로직이 들어가야 함 (나중에 구현)
         this.activePokemon = target; 
+        target.ability.OnSwitchIn();
         
         return true;
     }

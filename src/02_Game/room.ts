@@ -6,53 +6,6 @@ import type { Move } from '../01_Moves/move.js';
 import { ResolveStatusEffects } from '../03_BattleSystem/StatusSystem.js';
 import { VolatileRegistry } from '../03_BattleSystem/VolatileStatus.js';
 
-/*
-
-변수/함수 목록
-// 행동 종류
-export type ActionType = 'move' | 'switch';
-
-// 방의 상태 종류
-type RoomState = 'MOVE_SELECT' | 'BATTLE' | 'FORCE_SWITCH' | 'WAITING_OPPONENT;
-
-// 행동 데이터 구조체
-export interface BattleAction {
-    type: ActionType;
-    index: number; // 기술 번호(0~3) 혹은 파티 번호(0~5)
-}
-
-// 게임 로직 
-class GameRoom
-{
-    p1: Player | null = null; 
-    p2: Player | null = null;
-    public players: { [socketId: string]: 'p1' | 'p2' } = {}; 
-    
-    private p1Action: BattleAction | null = null;
-    private p2Action: BattleAction | null = null;
-
-    // ★ [New] 현재 방의 상태 (기본값: 전투 중)
-    public gameState: RoomState = 'BATTLE'; 
-    
-    // ★ [New] 누가 교체해야 하는지 기억해둘 변수 (기절한 플레이어 ID)
-    public faintPlayerId: string | null = null;
-
-    join(socketId: string): 'p1' | 'p2' | 'spectator'
-    leave(socketId: string)
-
-    handleAction(socketId: string, action: BattleAction, io: Server)
-
-    private resolveTurn(io: Server)
-    private endTurn(io: Server)
-
-    resetGame(io: Server)
-    broadcastState(io: Server)
-}
-
-
-*/
-
-
 // 행동의 종류: 기술(move) or 교체(switch)
 export type ActionType = 'move' | 'switch';
 
@@ -105,8 +58,32 @@ export class GameRoom {
             this.p2 = new Player(socketId, newParty2)
             this.p2.activePokemon = this.p2.party[1]!; // 어쨋든 피카츄 대 이상해씨로 결과는 같다
             this.players[socketId] = 'p2';
+
+            console.log(`[Room: ${this.roomId}] 게임 시작! 선봉 특성 발동`);
+        
+            // 1. 선봉 포켓몬 특성/아이템 발동
+            let activePoke: { player: any, speed: number }[] = [];
+            activePoke.push({player: this.p1, speed: this.p1.activePokemon.GetStat('spe')});
+            activePoke.push({player: this.p2, speed: this.p2.activePokemon.GetStat('spe')});
+
+            activePoke.sort((a,b)=>{
+                if(a.speed !== b.speed)
+                {
+                    return b.speed-a.speed;
+                }
+                return Math.random() - 0.5; 
+            });
+            for (const active of activePoke)
+            {
+                const p = active.player.activePokemon;
+                p.ability.OnSwitchIn();
+                // p.item.OnSwitchIn();
+            }
+
             return 'p2';
         }
+
+        
         return 'spectator';
     }
     
