@@ -28,24 +28,38 @@ io.on('connection', (socket) => {
     console.log(`[Lobby] 접속: ${socket.id}`);
 
     // 1. 방 입장 요청 처리 (클라이언트가 'join_game' 이벤트를 보내면 실행)
-    socket.on('join_game', (roomId) => {
+    socket.on('join_game', (data) => {
         // 이미 방에 들어가 있다면 무시하거나 기존 방 나가기 처리 (여기선 생략)
-        if (socketToRoom[socket.id]) return;
+        
+        let roomId = "";
+        let teamData = null;
 
+        if (typeof data === 'string') {
+            roomId = data;
+        } else {
+            roomId = data.roomId;
+            teamData = data.team;
+        }
+
+        if (socketToRoom[socket.id]) return;
         console.log(`[System] ${socket.id} 님이 [${roomId}] 방 입장을 요청했습니다.`);
 
         // Socket.io 룸 입장
         socket.join(roomId);
         socketToRoom[socket.id] = roomId; // 매핑 기록
 
-        // 방 인스턴스 없으면 생성 (Lazy Init)
-        if (!rooms[roomId]) {
+        // 1. 일단 가져와봄
+        let room = rooms[roomId];
+
+        // 2. 없으면 만들어서 넣고, 변수에도 할당
+        if (!room) {
             console.log(`[System] 새로운 방 생성: ${roomId}`);
-            rooms[roomId] = new GameRoom(roomId);
+            room = new GameRoom(roomId);
+            rooms[roomId] = room;
         }
 
-        const room = rooms[roomId];
-        const myRole = room.join(socket.id);
+        // 3. 이제 room은 무조건 GameRoom 타입임 (undefined 아님)
+        const myRole = room.join(socket.id, teamData);
 
         // 결과 전송
         socket.emit('role_assigned', { role: myRole, roomId: roomId });

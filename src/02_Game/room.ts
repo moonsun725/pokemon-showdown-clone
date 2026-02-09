@@ -45,16 +45,47 @@ export class GameRoom {
     // >< 이렇게 만들면 레퍼런스 복사라 플레이어별로 따로 만들어줘야 함
 
     // 유저 입장 처리
-    join(socketId: string): 'p1' | 'p2' | 'spectator'  // 여기 : 'p1' | 'p2' | 'spectator' 의미도 궁금해 >< 저렇게 적으면 오직 저 3가지 글자 중 하나만 반환한다고 보장 (오타 방지에 탁월)
+    join(socketId: string, teamData?: any[]): 'p1' | 'p2' | 'spectator'  // 여기 : 'p1' | 'p2' | 'spectator' 의미도 궁금해 >< 저렇게 적으면 오직 저 3가지 글자 중 하나만 반환한다고 보장 (오타 방지에 탁월)
     {
+
+        // 파티 생성 헬퍼 함수
+        const buildParty = (data?: any[]): Pokemon[] => {
+            const party: Pokemon[] = [];
+            
+            // 데이터가 유효하면 그걸로 생성
+            if (data && Array.isArray(data) && data.length > 0) {
+                for (const p of data) {
+                    try {
+                        // createPokemon 옵션으로 moves, item 전달
+                        const newPoke = createPokemon(p.name, {
+                            moves: p.moves,
+                            item: p.item
+                        });
+                        party.push(newPoke);
+                    } catch (e) {
+                        console.error(`[Room] 포켓몬 생성 실패 (${p.name}):`, e);
+                    }
+                }
+            }
+
+            // 만약 생성된 게 없으면 (데이터 오류 or 빈 팀) -> 기본 렌탈팀 제공
+            if (party.length === 0) {
+                console.log("[Room] 렌탈팀을 제공합니다.");
+                party.push(createPokemon("피카츄", { moves: ["10만볼트", "전광석화", "울음소리"], item: "Choice_Scarf" }));
+                party.push(createPokemon("파이리", { moves: ["화염방사", "공중날기"], item: "Leftovers" }));
+            }
+            
+            return party;
+        };
+
         if (!this.p1) {
-            const newParty = [createPokemon("피카츄", {moves: ["10만볼트", "전광석화", "칼춤", "울음소리"], items: "Leftovers"}), createPokemon("파이리",{moves: ["화염방사", "플레어드라이브", "용성군"]})];
+            const newParty = buildParty(teamData);
             this.p1 = new Player(socketId, newParty)
             this.p1.activePokemon = this.p1.party[0]!; // >< 여기도 일단 느낌표처리
             this.players[socketId] = 'p1';
             return 'p1';
         } else if (!this.p2) {
-            const newParty2  = [createPokemon("꼬부기", {moves: ["껍질깨기", "HP회복", "전광석화"]}), createPokemon("이상해씨", {moves: ["솔라빔", "지진", "독가스", "기가드레인"]})];
+            const newParty2  = buildParty(teamData);
             this.p2 = new Player(socketId, newParty2)
             this.p2.activePokemon = this.p2.party[1]!; // 어쨋든 피카츄 대 이상해씨로 결과는 같다
             this.players[socketId] = 'p2';
@@ -456,15 +487,13 @@ export class GameRoom {
 
     // UI 업데이트 헬퍼
     broadcastState(io: Server) {
-        if (!this.p1 || !this.p2) return;
-        // ★ 여기서 객체 통째로 보내던 걸 .toData()로 변경
-        const poke1Data = this.p1.activePokemon.toData();
-        const poke2Data = this.p2.activePokemon.toData();
-
-        // 파티 정보도 순환 참조가 있을 수 있으니 변환 필요
-        // (Player.party도 Pokemon 객체 배열이니까)
-        const p1PartyData = this.p1.party.map(p => p.toData());
-        const p2PartyData = this.p2.party.map(p => p.toData());
+        // 1. 데이터 안전하게 준비 (없으면 null)
+        const poke1Data = this.p1 ? this.p1.activePokemon.toData() : null;
+        const poke2Data = this.p2 ? this.p2.activePokemon.toData() : null;
+        
+        // 파티 정보도 안전하게 매핑
+        const p1PartyData = this.p1 ? this.p1.party.map(p => p.toData()) : null;
+        const p2PartyData = this.p2 ? this.p2.party.map(p => p.toData()) : null;
 
         io.to(this.roomId).emit('update_ui', {
             p1: { 

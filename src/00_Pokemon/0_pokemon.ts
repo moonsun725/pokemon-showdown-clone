@@ -29,7 +29,7 @@ export class Pokemon {
         this.Rank = new RankManager(this);
         this.moves = new MoveManager(this, options?.moves);
         this.ability = new AbilityManager(this, options?.ability);
-        this.item = new ItemManager(this, options?.items)
+        this.item = new ItemManager(this, options?.item)
     }
 
     GetStat(key: keyof realStats)
