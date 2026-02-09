@@ -7,6 +7,7 @@ import { RankManager } from './Components/rankManager.js';
 import type { PokemonOptions } from './Components/pokeOptions.js';
 import { AbilityManager } from './Components/abilityManager.js';
 import { ItemManager } from './Components/itemManager.js';
+import { GetPokemonData } from './1_pokeLoader.js';
 
 
 export class Pokemon {
@@ -117,8 +118,8 @@ export class Pokemon {
 
 // 데이터를 기반으로 포켓몬 생성 (C++의 팩토리 패턴과 유사)
 export function createPokemon(name: string, options?: PokemonOptions): Pokemon {
-    // 1. JSON 데이터에서 이름이 일치하는 포켓몬 찾기 (C++의 find_if와 유사)
-    const pData = data_P.pokedex.find(p => p.name === name);
+    // 1. 포켓로더를 만들었으니까 이제 json이 아니라 레지스트리에서 찾는다
+    const pData = GetPokemonData(name);
 
     if (!pData) {
         throw new Error(`${name}을(를) 도감에서 찾을 수 없습니다.`);

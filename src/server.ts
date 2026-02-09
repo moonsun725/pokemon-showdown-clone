@@ -6,7 +6,11 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { GameRoom } from './02_Game/room.js'; 
 import type { BattleAction } from './02_Game/room.js';
-import { LoadMoves } from './01_Moves/MoveLoader.js';
+import { MoveRegistry, LoadMoves } from './01_Moves/MoveLoader.js';
+import { PokeRegistry, LoadPokemonData } from './00_Pokemon/1_pokeLoader.js';
+import { ItemRegistry } from './04_Ability/ItemAbilities.js'; 
+
+LoadPokemonData();
 LoadMoves(); // 위치 상관없다니까...?
 
 const __filename = fileURLToPath(import.meta.url);
@@ -75,6 +79,23 @@ io.on('connection', (socket) => {
     });
 
     
+    socket.on('get_database', () => {
+        console.log(`[Server] ${socket.id}에게 게임 데이터 전송 중...`);
+
+        // 전체 데이터를 다 보내면 너무 크니까, 이름(name)이나 ID만 추려서 보냅니다.
+        // (나중에 상세 스탯이 필요하면 그때 구조를 바꾸면 됩니다)
+        const payload = {
+            pokemon: Object.keys(PokeRegistry), // ★ Pokedex 키만 보내면 끝!
+            moves: Object.keys(MoveRegistry),
+            
+            // 아이템은 객체(Registry) 형태라서 키(Key)나 name 속성을 추출
+            items: Object.keys(ItemRegistry)
+        };
+
+        socket.emit('database_data', payload);
+    });
+
+
     // 2. 행동 요청 처리(공격/교체))
     socket.on('action', (actionData: BattleAction) => {
         // ★ 소켓 맵을 통해 이 유저가 어느 방 소속인지 찾음

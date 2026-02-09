@@ -15,14 +15,10 @@ const teamSlotsContainer = document.getElementById('team-slots-container');
 const btnSaveTeam = document.getElementById('btn-save-team');
 
 /* **********임시************ */
-// ★ [데이터베이스] 구현된 포켓몬/기술/아이템 목록 (실제론 서버에서 받아오거나 파일로 관리)
-const AVAILABLE_POKEMON = ["피카츄", "파이리", "꼬부기", "이상해씨", "리자몽", "거북왕", "이상해꽃"];
-const AVAILABLE_MOVES = [
-    "몸통박치기", "전광석화", "10만볼트", "화염방사", "하이드로펌프", "솔라빔", 
-    "지진", "칼춤", "껍질깨기", "맹독", "HP회복", "공중날기", "구멍파기", 
-    "플레어드라이브", "용의춤", "용성군", "오물폭탄", "수면가루", "성장", "기가드레인"
-];
-const AVAILABLE_ITEMS = ["(없음)", "Leftovers", "Life_Orb", "Choice_Scarf"]; // ID로 사용
+// ★ [데이터베이스] 구현된 포켓몬/기술/아이템 목록 
+let AVAILABLE_POKEMON = []; 
+let AVAILABLE_MOVES = [];
+let AVAILABLE_ITEMS = ["(없음)"];
 
 // ★ [상태] 로컬 스토리지에서 불러오기 (없으면 기본값)
 let myTeam = [];
@@ -108,6 +104,41 @@ btnSaveTeam.addEventListener('click', () => {
     saveTeamData(); // 입력된 값 저장
     teambuilderScreen.classList.remove('active');
     lobbyScreen.classList.add('active');
+});
+
+// =========================================================
+// ★ [New] 팀 편성 버튼 클릭 시 데이터 요청
+// =========================================================
+btnTeambuilder.addEventListener('click', () => {
+    // 화면 전환
+    lobbyScreen.classList.remove('active');
+    teambuilderScreen.classList.add('active');
+
+    // 데이터가 아직 없으면 서버에 요청!
+    if (AVAILABLE_POKEMON.length === 0) {
+        console.log("서버에 데이터 요청 중...");
+        socket.emit('get_database'); 
+    } else {
+        // 이미 있으면 바로 렌더링
+        renderTeamBuilder();
+    }
+});
+
+// =========================================================
+// ★ [New] 서버로부터 데이터 수신
+// =========================================================
+socket.on('database_data', (data) => {
+    console.log("데이터 수신 완료!", data);
+
+    // 1. 받아온 데이터로 덮어쓰기
+    AVAILABLE_POKEMON = data.pokemon;
+    AVAILABLE_MOVES = data.moves;
+    
+    // 아이템은 '(없음)' 뒤에 이어붙이기
+    AVAILABLE_ITEMS = ["(없음)", ...data.items];
+
+    // 2. UI 그리기
+    renderTeamBuilder();
 });
 
 // =========================================================
