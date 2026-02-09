@@ -1,0 +1,35 @@
+/* public/style.css */
+
+body { font-family: sans-serif; padding: 20px; }
+
+/* 화면 전환 스타일 */
+.screen { display: none; }
+.active { display: block; }
+
+/* 로비 스타일 */
+#lobby-screen { text-align: center; margin-top: 100px; }
+input { padding: 10px; font-size: 16px; }
+button { padding: 10px 20px; font-size: 16px; cursor: pointer; }
+
+/* 메시지 로그 */
+#messages { list-style-type: none; margin: 0; padding: 0; border-top: 1px solid #ccc; margin-top: 20px;}
+#messages li { padding: 5px 10px; }
+#messages li:nth-child(odd) { background: #eee; }
+
+/* ★ 새로 추가한 HP 바 스타일 */
+.hp-container {
+    width: 100%;
+    background-color: #e0e0e0;
+    border-radius: 5px;
+    margin-top: 5px;
+    overflow: hidden;
+}
+.hp-fill {
+    height: 20px;
+    background-color: #4caf50;
+    width: 100%;
+    transition: width 0.5s ease-out, background-color 0.5s;
+}
+.hp-green { background-color: #4caf50; }
+.hp-yellow { background-color: #ffeb3b; }
+.hp-red { background-color: #f44336; }

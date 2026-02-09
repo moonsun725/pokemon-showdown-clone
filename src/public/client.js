@@ -77,18 +77,20 @@ function updateHpUI(current, max, barElement, textElement) {
 socket.on('update_ui', (data) => {
 
     const gameState = data.gameState;
-    const faintId = data.faintPlayerId; // (필요하면 사용)
+    const faintId = data.faintPlayerId;
 
     // (선택사항) 디버깅용: 콘솔이나 화면 구석에 상태 표시
     console.log(`Current State: ${gameState}`);
 
     if (data.p1.active) {
         p1Name.innerText = data.p1.active.name;
-        p1Hp.innerText = `HP: ${data.p1.active.hp} / ${data.p1.active.maxHp}`;
+        // 기존 innerText 방식 -> 함수 호출로 변경
+        updateHpUI(data.p1.active.hp, data.p1.active.maxHp, p1HpBar, p1HpText);
     }
     if (data.p2.active) {
         p2Name.innerText = data.p2.active.name;
-        p2Hp.innerText = `HP: ${data.p2.active.hp} / ${data.p2.active.maxHp}`;
+        // 기존 innerText 방식 -> 함수 호출로 변경
+        updateHpUI(data.p2.active.hp, data.p2.active.maxHp, p2HpBar, p2HpText);
     }
 
     moveButtonsContainer.innerHTML = '';
