@@ -120,6 +120,8 @@ export class MoveManager {
 
         // 6. [적중 시] 부가 효과 처리 (화상 확률 등)
         ProcessMoveEffects(move, target, owner, "OnHit", dmgRes.damage);
+        this.owner.item.OnAfterAttack(target, move, dmgRes.damage);
+        // this.owner.ability.OnAfterAttack(target, move, dmgRes.damage);
     }
 
     // 명중률 계산
