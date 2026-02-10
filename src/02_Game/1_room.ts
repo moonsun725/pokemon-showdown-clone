@@ -16,6 +16,8 @@ export interface BattleAction {
     index: number; // 기술 번호(0~3) 혹은 파티 번호(0~5)
 }
 
+const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
 export class GameRoom {
     public roomId: string;
     
@@ -236,84 +238,41 @@ export class GameRoom {
         }
     }
 
-    // 턴 계산 로직 (기존 함수 이식)
-    private resolveTurn(io: Server) {
+    private sortActs(p1: Player, p2: Player, act1: BattleAction, act2: BattleAction) : { player: any, moveIndex: number, speed: number, priority: number }[]// 나중에 더블배틀 같은 걸 생각하면 activePokemon의 리스트가 필요할수도 있겠다는 생각이 든다
+    {
+        let Order: { player: any, moveIndex: number, speed: number, priority: number }[] = []; // 대입하고 정의하고 헷갈리지 말자 ^^
+        let priorityTemp;
+
+        if (act1.type === 'switch') // 하드코딩이라 그렇게 마음에 들지는 않는다...
+            priorityTemp = 6;
+
+        const moveInst1 = p1.activePokemon.moves.Get(act1.index);
+        if (moveInst1)
+            priorityTemp = moveInst1.def.priority; // 이것까지 거쳤는데도 undefined일 수 있지만
+
+        Order.push({
+            player: p1, 
+            moveIndex: act1.index, 
+            speed: p1.activePokemon.GetStat('spe'),
+            priority: priorityTemp || 0 // 어차피 여기서 처리해준다
+        });
+
+        if (act2.type === 'switch')
+            priorityTemp = 6;
         
-        if(this.gameState != 'BATTLE') return; 
-        if (!this.p1 || !this.p2) return; // >< 안전장치
-        if (!this.p1Action || !this.p2Action) return;
-        // (!this.p1.activePokemon || !this.p2.activePokemon) 이렇게쓰면 개체가 null이라고 오류남
+        const moveInst2 = p2.activePokemon.moves.Get(act1.index);
+        if (moveInst2)
+            priorityTemp = moveInst2.def.priority;
 
-        const p1 = this.p1; // 짧게 쓰고싶으니까
-        const p2 = this.p2;
-        const act1 = this.p1Action;
-        const act2 = this.p2Action;
-
-        // ====================================================
-        // 1️⃣ [교체 페이즈] Switching Phase (우선도 최상)
-        // ====================================================
+        Order.push({
+            player: p2, 
+            moveIndex: act2.index, 
+            speed: p2.activePokemon.GetStat('spe'),
+            priority: priorityTemp || 0 // 어차피 여기서 처리해준다
+        });
         
-        // P1 교체 처리
-        if (act1.type === 'switch') {
-            const success = p1.switchPokemon(act1.index);
-            if (success) {
-                io.to(this.roomId).emit('chat message', `🔄 Player 1이 ${p1.activePokemon.name}(으)로 교체했다!`);
-            }
-        }
-
-        // P2 교체 처리
-        if (act2.type === 'switch') {
-            const success = p2.switchPokemon(act2.index);
-            if (success) {
-                io.to(this.roomId).emit('chat message', `🔄 Player 2가 ${p2.activePokemon.name}(으)로 교체했다!`);
-            }
-        }
-
-        // ====================================================
-        // 2️⃣ [공격 페이즈] Attacking Phase
-        // ====================================================
-
-        // 둘 중 하나라도 공격을 선택했는지 확인
-        const p1Attacks = (act1.type === 'move');
-        const p2Attacks = (act2.type === 'move');
-
-        // 둘 다 교체했으면 공격 페이즈는 스킵됨
-        if (!p1Attacks && !p2Attacks) {
-            this.endTurn(io); // 턴 종료 처리로 직행
-            return;
-        }
-        let attackers: { player: any, moveIndex: number, speed: number, priority: number }[] = [];
-
-        if (p1Attacks) {
-            // MoveManager의 Get 메서드 사용
-            const moveInst = p1.activePokemon.moves.Get(act1.index);
-            // 또는 public list에 접근 (읽기 전용으로 쓸 때)
-            // const moveInst = p1.activePokemon.moves.list[act1.index];
-
-            if (moveInst) {
-                attackers.push({
-                    player: p1, 
-                    moveIndex: act1.index, 
-                    speed: p1.activePokemon.GetStat('spe'),
-                    priority: moveInst.def.priority || 0
-                });
-            }
-        }
-
-        if (p2Attacks) {
-            const moveInst = p2.activePokemon.moves.Get(act2.index);
-            if (moveInst) {
-                attackers.push({ 
-                    player: p2, 
-                    moveIndex: act2.index, 
-                    speed: p2.activePokemon.GetStat('spe'), 
-                    priority: moveInst.def.priority || 0 
-                });
-            }
-        }
-
         // 스피드/우선도 정렬 (내림차순)
-        attackers.sort((a, b) => {
+        Order.sort((a, b) => {
             // 우선도(만 단위) + 스피드(일 단위) = 행동 결정력(Action Value)
             const scoreA = (a.priority * 100000) + a.speed;
             const scoreB = (b.priority * 100000) + b.speed;
@@ -326,8 +285,24 @@ export class GameRoom {
             return Math.random() - 0.5; 
         });
 
+        return Order;
+    }
+    // 턴 계산 로직 (기존 함수 이식)
+    private async resolveTurn(io: Server) {
+
+        if(this.gameState != 'BATTLE') return; 
+        if (!this.p1 || !this.p2) return; // >< 안전장치
+        if (!this.p1Action || !this.p2Action) return; // 근데 this. 박고 쓸거면 인수가 애초에 필요가 없잖아
+        // (!this.p1.activePokemon || !this.p2.activePokemon) 이렇게쓰면 개체가 null이라고 오류남
+        const p1 = this.p1; // 짧게 쓰고싶으니까
+        const p2 = this.p2;
+        const act1 = this.p1Action;
+        const act2 = this.p2Action;
+
+        const turnOrder: { player: any, moveIndex: number, speed: number, priority: number }[] = this.sortActs(p1,p2,act1,act2);;
+
         // 정렬된 순서대로 공격 실행
-        for (const attacker of attackers) {
+        for (const attacker of turnOrder) {
             const user = attacker.player;
             const enemy = (user === p1) ? p2 : p1; // 상대방 찾기
             
@@ -335,11 +310,23 @@ export class GameRoom {
             if (user.activePokemon.status === "FNT") continue;
 
             // 공격 실행
+            if (attacker.priority === 6)
+            {
+                const success = user.switchPokemon(attacker.moveIndex);
+                await sleep(1000); 
+                if (success) {
+                    io.to(this.roomId).emit('chat message', `🔄 ${user.id}는 ${user.activePokemon.name}(으)로 교체했다!`);
+                    this.broadcastState(io);
+                }
+            }
             user.activePokemon.useMove(attacker.moveIndex, enemy.activePokemon);
+            await sleep(1000); 
+            this.broadcastState(io); 
 
             // 공격 후 상대가 쓰러졌는지 체크 (게임 종료 로직)
             if (enemy.activePokemon.BattleState.Get() === "FNT") {
                 io.to(this.roomId).emit('chat message', `💀 ${enemy.activePokemon.name}는 쓰러졌다!`);
+                await sleep(1000);
                 // 여기서 resetGame 혹은 '강제 교체' 페이즈로 넘어가야 함
                 this.handleFaint(enemy, io); 
                 return; 
