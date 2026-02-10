@@ -3,7 +3,7 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import type { Move } from './0_move.js'; // 위에서 만든 타입 import
-import moves from '../05_Data/moves.json' with { type: 'json' };
+import moveData from '../05_Data/moves.json' with { type: 'json' };
 
 // __dirname 설정 (ES Module 환경)
 const __filename = fileURLToPath(import.meta.url);
@@ -19,18 +19,15 @@ export const MoveRegistry: { [name: string]: Move } = {};
 
 export function LoadMoves() {
     try {
-        const rawData = fs.readFileSync(jsonPath, 'utf-8');
-        const json = JSON.parse(rawData);
-
-        // JSON 배열을 돌면서 도감(Registry)에 등록
-        // moves.json 구조가 { "moves": [ ... ] } 형태라고 가정
-        const moveList = json.moves as Move[];
+        // fs.readFileSync 삭제 -> 그냥 import된 객체 사용
+        // moves.json 구조: { "moves": [ ... ] }
+        const moveList = moveData.moves as unknown as Move[];
 
         moveList.forEach((move) => {
             MoveRegistry[move.name] = move;
         });
 
-        console.log(`[System] 기술 ${moveList.length}개 로딩 완료!`);
+        console.log(`[System] 기술 ${moveList.length}개 로딩 완료! (Import 방식)`);
 
     } catch (err) {
         console.error(`[Error] moves.json 로딩 실패:`, err);
