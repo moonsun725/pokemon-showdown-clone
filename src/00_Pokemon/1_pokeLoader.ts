@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import type { IPokemonData } from './Components/statManager.js'; // 그래 너가 이미 만들어뒀잖아 왜 다른걸 또 가져다 써
+import type { IPokemonData } from './Components/0_statManager.js'; // 그래 너가 이미 만들어뒀잖아 왜 다른걸 또 가져다 써
 
 // __dirname 설정
 const __filename = fileURLToPath(import.meta.url);

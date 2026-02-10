@@ -1,12 +1,12 @@
 import data_P from '../05_Data/pokedex.json' with { type: 'json' };
-import { MoveManager } from './Components/moveManager.js';
-import { VolatileStatusManager } from './Components/volatileStatusManager.js';
-import { StatsManager, type IPokemonData, type realStats } from './Components/statManager.js';
-import { BattleStateManager } from './Components/battlestateManager.js';
-import { RankManager } from './Components/rankManager.js';
-import type { PokemonOptions } from './Components/pokeOptions.js';
-import { AbilityManager } from './Components/abilityManager.js';
-import { ItemManager } from './Components/itemManager.js';
+import { MoveManager } from './Components/3_moveManager.js';
+import { VolatileStatusManager } from './Components/6_volatileStatusManager.js';
+import { StatsManager, type IPokemonData, type realStats } from './Components/0_statManager.js';
+import { BattleStateManager } from './Components/1_battlestateManager.js';
+import { RankManager } from './Components/7_rankManager.js';
+import type { PokemonOptions } from './Components/2_pokeOptions.js';
+import { AbilityManager } from './Components/5_abilityManager.js';
+import { ItemManager } from './Components/4_itemManager.js';
 import { GetPokemonData } from './1_pokeLoader.js';
 
 
