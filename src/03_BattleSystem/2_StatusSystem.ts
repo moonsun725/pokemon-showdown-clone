@@ -8,6 +8,7 @@ export function TryApplyStatus(target: Pokemon, statusTag: string): boolean {
     // 1. 이미 상태이상이 있으면 실패
     if (target.BattleState.Get() !== null) {
         console.log("[StatusSystem]: 그러나 실패하고 말았다!");
+        console.log("현재 적용된 상태:", target.BattleState.Get());
         return false;
     }
 
