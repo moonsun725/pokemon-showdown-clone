@@ -1,10 +1,10 @@
 // mechanics.ts
 import { Pokemon } from '../00_Pokemon/0_pokemon.js';
 // Move 인터페이스가 pokemon.ts에 export 되어 있다고 가정 (안 되어 있으면 추가 필요)
-import type { Move } from '../01_Moves/move.js'; 
-import { GetPowerMultiplier } from './moveAbility.js';
-import getTypeEffectiveness from './typeChart.js';
-import { RankToMultiplier } from './Rank.js';
+import type { Move } from '../01_Moves/0_move.js'; 
+import { GetPowerMultiplier } from './1_moveAbility.js';
+import getTypeEffectiveness from './0_typeChart.js';
+import { RankToMultiplier } from './5_Rank.js';
 
 interface DamageResult {
     damage: number;

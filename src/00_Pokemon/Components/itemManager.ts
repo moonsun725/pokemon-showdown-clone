@@ -1,6 +1,6 @@
 import { Pokemon } from "../0_pokemon.js";
 import { ItemRegistry } from "../../04_Ability/ItemAbilities.js";
-import type { Move } from "../../01_Moves/move.js";
+import type { Move } from "../../01_Moves/0_move.js";
 
 export class ItemManager {
     private owner: Pokemon;

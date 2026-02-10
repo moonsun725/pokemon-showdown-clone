@@ -1,7 +1,7 @@
 import { Pokemon } from "../00_Pokemon/0_pokemon.js";
-import { type Move } from "../01_Moves/move.js";
-import { TryApplyStatus } from "../03_BattleSystem/StatusSystem.js";
-import type { VolatileStatus } from '../03_BattleSystem/VolatileStatus.js';
+import { type Move } from "../01_Moves/0_move.js";
+import { TryApplyStatus } from "../03_BattleSystem/2_StatusSystem.js";
+import type { VolatileStatus } from '../03_BattleSystem/3_VolatileStatus.js';
 
 export interface AbilityLogic {
     // 대부분의 경우 user, target을 구분해서 받지 않고, "적용 대상(target)" 하나만 받음

@@ -1,8 +1,8 @@
 // room.ts
 import { Server } from 'socket.io';
-import { Player } from './Player.js';
+import { Player } from './0_Player.js';
 import { Pokemon, createPokemon,} from '../00_Pokemon/0_pokemon.js';
-import { ResolveStatusEffects } from '../03_BattleSystem/StatusSystem.js';
+import { ResolveStatusEffects } from '../03_BattleSystem/2_StatusSystem.js';
 
 // 행동의 종류: 기술(move) or 교체(switch)
 export type ActionType = 'move' | 'switch';

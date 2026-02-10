@@ -1,7 +1,7 @@
 // src/Game/VolatileStatusManager.ts
 import { Pokemon } from '../0_pokemon.js';
-import { type VolatileStatus, VolatileRegistry } from '../../03_BattleSystem/VolatileStatus.js';
-import type { Move } from '../../01_Moves/move.js';
+import { type VolatileStatus, VolatileRegistry } from '../../03_BattleSystem/3_VolatileStatus.js';
+import type { Move } from '../../01_Moves/0_move.js';
 
 export class VolatileStatusManager {
     private owner: Pokemon; // 이 상태들이 누구 것인지 알고 있어야 함

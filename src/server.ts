@@ -4,9 +4,9 @@ import { createServer } from 'http';
 import { Server } from 'socket.io';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { GameRoom } from './02_Game/room.js'; 
-import type { BattleAction } from './02_Game/room.js';
-import { MoveRegistry, LoadMoves } from './01_Moves/MoveLoader.js';
+import { GameRoom } from './02_Game/1_room.js'; 
+import type { BattleAction } from './02_Game/1_room.js';
+import { MoveRegistry, LoadMoves } from './01_Moves/1_MoveLoader.js';
 import { PokeRegistry, LoadPokemonData } from './00_Pokemon/1_pokeLoader.js';
 import { ItemRegistry } from './04_Ability/ItemAbilities.js'; 
 
@@ -142,7 +142,8 @@ io.on('connection', (socket) => {
     });
 });
 
-const PORT = 3000;
+const PORT = process.env.PORT || 3000; 
+
 httpServer.listen(PORT, () => {
-    console.log(`Server running on http://localhost:${PORT}`);
+    console.log(`Server running on port ${PORT}`);
 });

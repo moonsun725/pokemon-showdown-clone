@@ -1,6 +1,6 @@
 // src/Game/Components/AbilityManager.ts
 import { Pokemon } from "../00_Pokemon/0_pokemon.js"; 
-import { type Move } from "../01_Moves/move.js";
+import { type Move } from "../01_Moves/0_move.js";
 
 // 특성 로직 인터페이스 (필요한 메서드만 구현하면 됨)
 export interface AbilityLogic {

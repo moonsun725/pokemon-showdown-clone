@@ -1,6 +1,6 @@
 // src/Game/Components/ItemManager.ts
 import { Pokemon } from "../00_Pokemon/0_pokemon.js";
-import { type Move } from "../01_Moves/move.js"; 
+import { type Move } from "../01_Moves/0_move.js"; 
 
 export interface ItemLogic {
     name: string;

@@ -1,9 +1,9 @@
 import { Pokemon } from '../0_pokemon.js';
-import type { Move, MoveInstance } from '../../01_Moves/move.js'; // 경로 확인 필요
-import { GetMove } from '../../01_Moves/MoveLoader.js';
-import { calculateDamage } from '../../03_BattleSystem/dmgCalc.js';
-import { ProcessMoveEffects } from '../../03_BattleSystem/moveAbility.js';
-import { RankToMultiplierAccEv } from '../../03_BattleSystem/Rank.js';
+import type { Move, MoveInstance } from '../../01_Moves/0_move.js'; // 경로 확인 필요
+import { GetMove } from '../../01_Moves/1_MoveLoader.js';
+import { calculateDamage } from '../../03_BattleSystem/4_dmgCalc.js';
+import { ProcessMoveEffects } from '../../03_BattleSystem/1_moveAbility.js';
+import { RankToMultiplierAccEv } from '../../03_BattleSystem/5_Rank.js';
 
 export class MoveManager {
     private owner: Pokemon;

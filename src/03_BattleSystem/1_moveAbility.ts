@@ -1,5 +1,5 @@
 import { Pokemon } from '../00_Pokemon/0_pokemon.js';
-import type { Move } from '../01_Moves/move.js';
+import type { Move } from '../01_Moves/0_move.js';
 import { EffectRegistry} from '../04_Ability/MoveAbilities.js';
 
 // 트리거 타입 정의: 언제 호출되었는가?
