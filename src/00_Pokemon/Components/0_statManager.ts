@@ -4,9 +4,9 @@ export interface IPokemonData {
     name: string;
     hp: number;
     atk: number;
-    //def: number;
-    //spa: number;
-    //spd: number;
+    def: number;
+    spa: number;
+    spd: number;
     spe: number;
     type: string[];
 }
@@ -15,9 +15,9 @@ export interface realStats // 얘 있어도 되나
 {
     hp: number;
     atk: number;
-    // def: number;
-    // spa: number;
-    // spd: number;
+    def: number;
+    spa: number;
+    spd: number;
     spe: number;
 }
 
