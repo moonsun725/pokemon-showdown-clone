@@ -96,7 +96,7 @@ export class Pokemon {
             name: this.name,
             hp: this.Stats.hp,
             maxHp: this.Stats.maxHp,
-            // stats: this.Stats.Stats, // 필요하다면
+            stats: this.Stats.Stats, // 필요하다면
             // 보통 숨김 정보지만 UI 갱신용으로 필요하다면 추가
             
             // 상태이상 (BattleState가 객체라면 .status 문자열만 보냄)

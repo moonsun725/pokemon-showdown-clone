@@ -14,7 +14,6 @@ const teambuilderScreen = document.getElementById('teambuilder-screen');
 const teamSlotsContainer = document.getElementById('team-slots-container');
 const btnSaveTeam = document.getElementById('btn-save-team');
 
-/* **********임시************ */
 // ★ [데이터베이스] 구현된 포켓몬/기술/아이템 목록 
 let AVAILABLE_POKEMON = []; 
 let AVAILABLE_MOVES = [];
@@ -33,6 +32,22 @@ if (savedTeam) {
         { name: "파이리", item: "Life_Orb", moves: ["화염방사", "공중날기", "용성군", "지진"] }
     ];
 }
+
+// 스프라이트
+const p1Sprite = document.getElementById('p1-sprite');
+const p2Sprite = document.getElementById('p2-sprite');
+
+// ★ 한글 이름 -> 영어 ID 매핑 (임시)
+// 나중에는 서버에서 id를 보내주는 게 정석입니다.
+const ID_MAP = {
+    "피카츄": "pikachu",
+    "파이리": "charmander",
+    "꼬부기": "squirtle",
+    "이상해씨": "bulbasaur",
+    "리자몽": "charizard",
+    "거북왕": "blastoise",
+    "이상해꽃": "venusaur"
+};
 
 // 게임 UI 요소들
 const p1Name = document.getElementById('p1-name');
@@ -79,17 +94,15 @@ function updateHpUI(current, max, barElement, textElement) {
     }
 }
 
-// 로비 입장 - 레거시 코드
-/*
-btnJoin.addEventListener('click', () => {
-    const roomId = roomInput.value.trim();
-    if (!roomId) {
-        alert("방 이름을 입력해주세요!");
-        return;
-    }
-    socket.emit('join_game', roomId);
-});
-*/
+function getSpriteUrl(name) {
+    const id = ID_MAP[name] || "pikachu"; // 없으면 피카츄
+    // 움직이는 GIF (Pokemon Showdown 서버 사용)
+    return `https://play.pokemonshowdown.com/sprites/ani/${id}.gif`;
+    
+    // 정지된 이미지를 원하면 아래 주소 사용
+    // return `https://play.pokemonshowdown.com/sprites/gen5/${id}.png`;
+}
+
 // 파티 편집기
 // =========================================================
 // 1. 화면 전환 로직
@@ -256,6 +269,8 @@ socket.on('update_ui', (data) => {
     // P1 업데이트
     if (data.p1 && data.p1.active) {
         p1Name.innerText = data.p1.active.name;
+        // 스프라이트 업데이트
+        p1Sprite.src = getSpriteUrl(data.p1.active.name);
         // 기존 innerText 에러 나던 곳 -> 함수 호출로 변경
         updateHpUI(data.p1.active.hp, data.p1.active.maxHp, p1HpBar, p1HpText);
     }
@@ -263,6 +278,7 @@ socket.on('update_ui', (data) => {
     // P2 업데이트
     if (data.p2 && data.p2.active) {
         p2Name.innerText = data.p2.active.name;
+        p2Sprite.src = getSpriteUrl(data.p2.active.name);
         updateHpUI(data.p2.active.hp, data.p2.active.maxHp, p2HpBar, p2HpText);
     }
 
