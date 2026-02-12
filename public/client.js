@@ -18,6 +18,7 @@ const btnSaveTeam = document.getElementById('btn-save-team');
 let AVAILABLE_POKEMON = []; 
 let AVAILABLE_MOVES = [];
 let AVAILABLE_ITEMS = ["(없음)"];
+let AVAILABLE_ABILITIES = [];
 
 // ★ [상태] 로컬 스토리지에서 불러오기 (없으면 기본값)
 let myTeam = [];
@@ -156,6 +157,7 @@ socket.on('database_data', (data) => {
     
     // 아이템은 '(없음)' 뒤에 이어붙이기
     AVAILABLE_ITEMS = ["(없음)", ...data.items];
+    AVAILABLE_ABILITIES = [...data.abilities];
 
     // 2. UI 그리기
     renderTeamBuilder();
@@ -188,7 +190,13 @@ function renderTeamBuilder() {
                     ${AVAILABLE_ITEMS.map(it => `<option value="${it}" ${it === member.item ? 'selected' : ''}>${it}</option>`).join('')}
                  </select>`;
 
-        // 2-3. 기술 선택 (4개)
+        // 2-3. 특성 선택
+        html += `<label>특성:</label>`;
+        html += `<select class="ability-select">
+                    ${AVAILABLE_ABILITIES.map(ab => `<option value="${ab}" ${ab === member.ability ? 'selected' : ''}>${ab}</option>`).join('')}
+                 </select>`;
+
+        // 2-4. 기술 선택 (4개)
         html += `<label>기술:</label>`;
         for (let j = 0; j < 4; j++) {
             const moveVal = member.moves ? member.moves[j] : "";
@@ -196,6 +204,7 @@ function renderTeamBuilder() {
                         <option value="">(기술 ${j+1})</option>
                         ${AVAILABLE_MOVES.map(m => `<option value="${m}" ${m === moveVal ? 'selected' : ''}>${m}</option>`).join('')}
                      </select>`;
+                     
         }
 
         slotDiv.innerHTML = html;
@@ -298,8 +307,8 @@ function updateTooltipContent(pokemon) {
     const s = pokemon.stats || { atk: '?', def: '?', spa: '?', spd: '?', spe: '?' };
 
     let html = `<strong>${pokemon.name}</strong> (Lv. 50)\n`;
-    html += `도구: <span style="color:#4caf50">${item.name}</span>\n`;
-    html += `특성: ${ability.name}\n`;
+    html += `도구: <span style="color:#4caf50">${item}</span>\n`;
+    html += `특성: ${ability}\n`;
     html += `<hr style="margin: 5px 0; border: 0; border-top: 1px solid #555;">`;
     
     // 스탯 표시
