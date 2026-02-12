@@ -33,9 +33,16 @@ if (savedTeam) {
     ];
 }
 
-// 스프라이트
-const p1Sprite = document.getElementById('p1-sprite');
+// 스프라이트 위에 커서 올리면 툴팁 보여주기
+// 1. 전역 변수 추가 (현재 나와있는 포켓몬 정보 저장용)
+let p1ActiveData = null;
+let p2ActiveData = null;
+
+// 2. 툴팁 요소 가져오기
+const tooltip = document.getElementById('game-tooltip');
+const p1Sprite = document.getElementById('p1-sprite'); // 아까 만든 이미지 태그 ID
 const p2Sprite = document.getElementById('p2-sprite');
+
 
 // ★ 한글 이름 -> 영어 ID 매핑 (임시)
 // 나중에는 서버에서 id를 보내주는 게 정석입니다.
@@ -245,6 +252,67 @@ btnJoin.addEventListener('click', () => {
     socket.emit('join_game', { roomId: roomId, team: myTeam });
 });
 
+
+// UI 호버링
+// ---------------------------------------------------------
+// [A] 마우스 이벤트 리스너 (이미지에 마우스 올렸을 때)
+// ---------------------------------------------------------
+function addTooltipEvents(element, getDataFunc) {
+    // 1. 마우스 진입: 데이터 보여주기
+    element.addEventListener('mouseenter', () => {
+        const data = getDataFunc();
+        if (!data) return;
+
+        tooltip.style.display = 'block';
+        updateTooltipContent(data);
+    });
+
+    // 2. 마우스 이동: 툴팁이 마우스 따라다니기
+    element.addEventListener('mousemove', (e) => {
+        // 마우스 오른쪽 아래에 위치
+        tooltip.style.left = (e.pageX + 15) + 'px';
+        tooltip.style.top = (e.pageY + 15) + 'px';
+    });
+
+    // 3. 마우스 나감: 숨기기
+    element.addEventListener('mouseleave', () => {
+        tooltip.style.display = 'none';
+    });
+}
+
+// Player 1, 2 스프라이트에 이벤트 연결
+addTooltipEvents(p1Sprite, () => p1ActiveData);
+addTooltipEvents(p2Sprite, () => p2ActiveData);
+
+
+// ---------------------------------------------------------
+// [B] 툴팁 내용 채우기 (HTML 생성)
+// ---------------------------------------------------------
+function updateTooltipContent(pokemon) {
+    // 혹시 데이터가 없을 경우 방지
+    const item = pokemon.item || "(없음)";
+    const ability = pokemon.ability || "(알 수 없음)"; // 특성 정보가 있다면
+    
+    // 스탯 정보 (서버에서 stats 객체를 보내준다고 가정)
+    // 만약 상대방 스탯을 숨기고 싶다면 여기서 if문으로 분기 처리 가능
+    const s = pokemon.stats || { atk: '?', def: '?', spa: '?', spd: '?', spe: '?' };
+
+    let html = `<strong>${pokemon.name}</strong> (Lv. 50)\n`;
+    html += `도구: <span style="color:#4caf50">${item.name}</span>\n`;
+    html += `특성: ${ability.name}\n`;
+    html += `<hr style="margin: 5px 0; border: 0; border-top: 1px solid #555;">`;
+    
+    // 스탯 표시
+    html += `<div class="stat-row"><span class="stat-label">공격</span> <span class="stat-val">${s.atk}</span></div>`;
+    html += `<div class="stat-row"><span class="stat-label">방어</span> <span class="stat-val">${s.def}</span></div>`;
+    html += `<div class="stat-row"><span class="stat-label">특공</span> <span class="stat-val">${s.spa}</span></div>`;
+    html += `<div class="stat-row"><span class="stat-label">특방</span> <span class="stat-val">${s.spd}</span></div>`;
+    html += `<div class="stat-row"><span class="stat-label">스피드</span> <span class="stat-val">${s.spe}</span></div>`;
+
+    tooltip.innerHTML = html;
+}
+
+
 // 역할 할당
 socket.on('role_assigned', (data) => {
     myRole = data.role;
@@ -268,7 +336,8 @@ socket.on('update_ui', (data) => {
     // ★ [수정] HP 업데이트 로직 변경
     // P1 업데이트
     if (data.p1 && data.p1.active) {
-        p1Name.innerText = data.p1.active.name;
+        p1ActiveData = data.p1.active; 
+        p1Name.innerText = data.p1.active.name; // 원래는 이름만 받아와서 표시하던걸 나머지 데이터도 받아옴
         // 스프라이트 업데이트
         p1Sprite.src = getSpriteUrl(data.p1.active.name);
         // 기존 innerText 에러 나던 곳 -> 함수 호출로 변경
@@ -277,6 +346,7 @@ socket.on('update_ui', (data) => {
     
     // P2 업데이트
     if (data.p2 && data.p2.active) {
+        p2ActiveData = data.p2.active;
         p2Name.innerText = data.p2.active.name;
         p2Sprite.src = getSpriteUrl(data.p2.active.name);
         updateHpUI(data.p2.active.hp, data.p2.active.maxHp, p2HpBar, p2HpText);
