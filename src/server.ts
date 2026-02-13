@@ -9,6 +9,7 @@ import type { BattleAction } from './02_Game/1_room.js';
 import { MoveRegistry, LoadMoves } from './01_Moves/1_MoveLoader.js';
 import { PokeRegistry, LoadPokemonData } from './00_Pokemon/1_pokeLoader.js';
 import { ItemRegistry } from './04_Ability/ItemAbilities.js'; 
+import { AbilityRegistry } from './04_Ability/PassiveAbilities.js';
 
 LoadPokemonData();
 LoadMoves(); // 위치 상관없다니까...?
@@ -89,7 +90,8 @@ io.on('connection', (socket) => {
             moves: Object.keys(MoveRegistry),
             
             // 아이템은 객체(Registry) 형태라서 키(Key)나 name 속성을 추출
-            items: Object.keys(ItemRegistry)
+            items: Object.keys(ItemRegistry),
+            abilities: Object.keys(AbilityRegistry)
         };
 
         socket.emit('database_data', payload);

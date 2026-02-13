@@ -37,8 +37,16 @@ export class StatsManager {
         this.baseStats = data;
         this.owner = owner;
         
-        // (나중에 여기에 개체값/노력치 반영 공식 추가 가능)
-        this.Stats = data;  // (ex: data.hp * 2 + 110 ...)
+        // (나중에 여기에 개체값/노력치 반영 공식 추가 가능) // (ex: data.hp * 2 + 110 ...)
+        this.Stats = 
+        {
+            hp: data.hp,
+            atk: data.atk,
+            def: data.def,
+            spa: data.spa,
+            spd: data.spd,
+            spe: data.spe
+        }
         this.maxHp = this.Stats.hp;
         this.hp = this.maxHp;
         

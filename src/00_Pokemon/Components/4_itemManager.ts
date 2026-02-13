@@ -5,18 +5,26 @@ import type { Move } from "../../01_Moves/0_move.js";
 export class ItemManager {
     private owner: Pokemon;
     public currentId: string | null = null;
+    public name: string;
 
     constructor(owner: Pokemon, itemId?: string)
     {
         this.owner = owner;
         this.currentId = itemId || null;
+        this.name = '이거 나오면 수정해야됨';
         this.Init();
+        
     }
+    
     Init() // 메서드는 발동 순서대로 정렬하는게 좋은 것 같아
     {
         if (!this.currentId) return;
         const logic = ItemRegistry[this.currentId];
-        if (logic && logic.Init) logic.Init(this.owner);
+        if (logic) { 
+            if (logic.Init)
+                logic.Init(this.owner);
+            this.name = logic.name;
+        }
     }
 
 
@@ -41,7 +49,6 @@ export class ItemManager {
         
     }
 
-    
     OnTurnEnd() 
     {
         if (!this.currentId) return;

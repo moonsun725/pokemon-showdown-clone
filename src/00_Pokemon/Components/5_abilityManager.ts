@@ -4,10 +4,13 @@ import { AbilityRegistry } from "../../04_Ability/PassiveAbilities.js";
 export class AbilityManager {
     private owner: Pokemon;
     public currentId: string | null = null;
+    public name: string = '이거 나오면 수정해야됨'
 
     constructor(owner: Pokemon, abilityId?: string) {
         this.owner = owner;
         this.currentId = abilityId || null;
+        if (abilityId && AbilityRegistry[abilityId])
+            this.name = AbilityRegistry[abilityId].name;
     }
 
     // 트리거 메서드들 (외부에서 호출)

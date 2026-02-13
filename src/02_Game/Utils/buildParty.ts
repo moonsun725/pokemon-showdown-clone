@@ -10,7 +10,8 @@ export function buildParty(data?: any[]): Pokemon[]
                 // createPokemon 옵션으로 moves, item 전달
                 const newPoke = createPokemon(p.name, {
                     moves: p.moves,
-                    item: p.item
+                    item: p.item,
+                    ability: p.ability
                 });
                 party.push(newPoke);
             } catch (e) {

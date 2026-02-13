@@ -110,6 +110,9 @@ export class Pokemon {
                 maxPp: m.maxPp,
             })),
             
+            // 아이템
+            item: this.item.name || "(도구 없음)" 
+
             // 이미지 경로 등을 위한 ID가 있다면 추가
             // id: this.data.id 
         };

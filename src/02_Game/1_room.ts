@@ -56,7 +56,7 @@ export class GameRoom {
         } else if (!this.p2) {
             const newParty2  = buildParty(teamData);
             this.p2 = new Player(socketId, newParty2)
-            this.p2.activePokemon = this.p2.party[1]!; // 어쨋든 피카츄 대 이상해씨로 결과는 같다
+            this.p2.activePokemon = this.p2.party[0]!; // 어쨋든 피카츄 대 이상해씨로 결과는 같다
             this.players[socketId] = 'p2';
 
             console.log(`[Room: ${this.roomId}] 게임 시작! 선봉 특성 발동`);
