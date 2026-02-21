@@ -49,7 +49,7 @@ export class GameRoom {
     {
         if (!this.p1) {
             const newParty = buildParty(teamData); // join 시점에서 인수로 
-            this.p1 = new Player(socketId, newParty)
+            this.p1 = new Player(socketId, newParty);
             this.p1.activePokemon = this.p1.party[0]!; // >< 여기도 일단 느낌표처리
             this.players[socketId] = 'p1';
             return 'p1';
