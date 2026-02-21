@@ -1,10 +1,12 @@
 <!DOCTYPE html>
 <html lang="ko">
+
 <head>
     <meta charset="UTF-8">
     <title>포켓몬 쇼다운 클론</title>
     <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
 
     <div id="lobby-screen" class="screen active">
@@ -16,27 +18,27 @@
     </div>
 
     <div id="teambuilder-screen" class="screen">
-    <h1>나만의 팀 편성</h1>
-    <p>1번 슬롯이 선봉으로 나갑니다.</p>
-    
-    <div id="team-slots-container" style="display: flex; flex-wrap: wrap; gap: 10px; justify-content: center;">
+        <h1>나만의 팀 편성</h1>
+        <p>1번 슬롯이 선봉으로 나갑니다.</p>
+
+        <div id="team-slots-container" style="display: flex; flex-wrap: wrap; gap: 10px; justify-content: center;">
         </div>
 
-    <hr>
-    <div style="text-align: center; margin-top: 20px;">
-        <button id="btn-save-team" style="background-color: #4caf50; color: white;">저장하고 로비로</button>
+        <hr>
+        <div style="text-align: center; margin-top: 20px;">
+            <button id="btn-save-team" style="background-color: #4caf50; color: white;">저장하고 로비로</button>
+        </div>
     </div>
-</div>
 
     <div id="game-screen" class="screen">
         <h1>포켓몬 쇼다운 - 대기 중</h1>
-        
+
         <div style="display: flex; gap: 50px; margin-bottom: 20px;">
             <div id="p1-status" style="border: 1px solid #ccc; padding: 10px; min-width: 150px;">
                 <img id="p1-sprite" src="" alt="P1 Pokemon" style="width: 100px; height: 100px; object-fit: contain;">
                 <h3>Player 1</h3>
                 <div id="p1-name">?</div>
-                
+
                 <div class="hp-container">
                     <div id="p1-hp-bar" class="hp-fill"></div>
                 </div>
@@ -81,8 +83,10 @@
 
     <div id="game-tooltip" class="game-tooltip"></div>
     <script src="/socket.io/socket.io.js"></script>
-    
+
     <script src="client.js"></script>
 </body>
+
 </html>
+
 </html>
