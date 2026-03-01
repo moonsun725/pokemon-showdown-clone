@@ -1,13 +1,6 @@
 // js/teambuilder.js
 import { socket } from './network.js';
 
-// DOM 요소
-const btnTeambuilder = document.getElementById('btn-teambuilder');
-const teambuilderScreen = document.getElementById('teambuilder-screen');
-const lobbyScreen = document.getElementById('lobby-screen');
-const teamSlotsContainer = document.getElementById('team-slots-container');
-const btnSaveTeam = document.getElementById('btn-save-team');
-
 // 데이터 저장 변수
 let AVAILABLE_POKEMON = [];
 let AVAILABLE_MOVES = [];
@@ -17,7 +10,18 @@ let AVAILABLE_ABILITIES = [];
 // 내 팀 데이터 (외부에서 가져갈 수 있게 export)
 export let myTeam = [];
 
+// DOM 껍데기 변수
+let btnTeambuilder;
+let teambuilderScreen;
+let lobbyScreen;
+let teamSlotsContainer;
+let btnSaveTeam;
+
 export function initTeamBuilder() {
+
+    // 0. DOM 요소 찾아오기
+    initDOMs_Builder();
+
     // 1. 저장된 팀 불러오기
     const savedTeam = localStorage.getItem('myPokemonTeam');
     if (savedTeam) {
@@ -62,6 +66,16 @@ export function initTeamBuilder() {
     });
 }
 
+// DOM initialize
+function initDOMs_Builder()
+{
+    btnTeambuilder = document.getElementById('btn-teambuilder');
+    teambuilderScreen = document.getElementById('teambuilder-screen');
+    lobbyScreen = document.getElementById('lobby-screen');
+    teamSlotsContainer = document.getElementById('team-slots-container');
+    btnSaveTeam = document.getElementById('btn-save-team');
+}
+
 // UI 렌더링 함수
 function renderTeamBuilder() {
     teamSlotsContainer.innerHTML = '';
@@ -71,15 +85,15 @@ function renderTeamBuilder() {
         slotDiv.className = 'team-slot';
 
         let html = `<h4>Slot ${i + 1}</h4>`;
-        
+
         // 포켓몬
         html += `<label>포켓몬:</label><select class="poke-select"><option value="">(비움)</option>
                  ${AVAILABLE_POKEMON.map(p => `<option value="${p}" ${p === member.name ? 'selected' : ''}>${p}</option>`).join('')}</select>`;
-        
+
         // 아이템
         html += `<label>도구:</label><select class="item-select">
                  ${AVAILABLE_ITEMS.map(it => `<option value="${it}" ${it === member.item ? 'selected' : ''}>${it}</option>`).join('')}</select>`;
-        
+
         // 특성 (추후 구현)
         html += `<label>특성:</label><select class="ability-select"><option>특성1</option></select>`;
 
@@ -87,7 +101,7 @@ function renderTeamBuilder() {
         html += `<label>기술:</label>`;
         for (let j = 0; j < 4; j++) {
             const moveVal = member.moves ? member.moves[j] : "";
-            html += `<select class="move-select"><option value="">(기술 ${j+1})</option>
+            html += `<select class="move-select"><option value="">(기술 ${j + 1})</option>
                      ${AVAILABLE_MOVES.map(m => `<option value="${m}" ${m === moveVal ? 'selected' : ''}>${m}</option>`).join('')}</select>`;
         }
         slotDiv.innerHTML = html;
@@ -104,7 +118,7 @@ function saveTeamData() {
         if (!name) return;
         const item = slot.querySelector('.item-select').value;
         const moves = Array.from(slot.querySelectorAll('.move-select'))
-                           .map(s => s.value).filter(v => v);
+            .map(s => s.value).filter(v => v);
         newTeam.push({ name, item: item === "(없음)" ? undefined : item, moves });
     });
     myTeam = newTeam;
